@@ -1,0 +1,167 @@
+{% extends 'food_donation/base.html' %}
+
+{% block title %}About Us - Beyond Hunger{% endblock %}
+
+{% block extra_css %}
+<style>
+    .team-card {
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0,0,0,0.125);
+    }
+    .team-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        border-color: #4caf50;
+    }
+    .team-card img {
+        transition: all 0.5s ease;
+    }
+    .team-card:hover img {
+        transform: scale(1.1);
+    }
+    .animate-on-scroll {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.8s ease;
+    }
+    .animate-on-scroll.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0"><i class="fas fa-info-circle me-2"></i>About Beyond Hunger</h2>
+            </div>
+            <div class="card-body">
+                <div class="row mb-5">
+                    <div class="col-md-6 animate-on-scroll">
+                        <h3 class="mb-4">Our Mission</h3>
+                        <p class="lead">At Beyond Hunger, we believe that no one should go hungry when food is being wasted every day.</p>
+                        <p>Our mission is to create a sustainable food ecosystem by connecting food donors with those in need, reducing food waste, and ensuring that nutritious food reaches everyone in our community.</p>
+                        <p>We leverage technology to make food donation simple, efficient, and accessible, while building a network of dedicated volunteers who help us bridge the gap between excess food and hunger.</p>
+                    </div>
+                    <div class="col-md-6 animate-on-scroll">
+                        <img src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Community Food Distribution" class="img-fluid rounded">
+                    </div>
+                </div>
+
+                <div class="row mb-5">
+                    <div class="col-md-6 order-md-2 animate-on-scroll">
+                        <h3 class="mb-4">Our Vision</h3>
+                        <p>We envision a world where:</p>
+                        <ul>
+                            <li>No food goes to waste while people go hungry</li>
+                            <li>Every community has reliable access to nutritious food</li>
+                            <li>Food donors and recipients are connected seamlessly</li>
+                            <li>Volunteers feel empowered to make a difference</li>
+                            <li>Technology is used to solve social challenges</li>
+                        </ul>
+                        <p>Through our platform, we aim to create lasting change in how communities think about food waste and hunger, fostering a culture of sharing and sustainability.</p>
+                    </div>
+                    <div class="col-md-6 order-md-1 animate-on-scroll">
+                        <img src="https://images.unsplash.com/photo-1544060607-b5f16975d611?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Volunteers Working" class="img-fluid rounded">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12 animate-on-scroll">
+                        <h3 class="mb-4 text-center">Our Team</h3>
+                        <div class="row justify-content-center">
+                            <div class="col-md-4 mb-4">
+                                <div class="card h-100 team-card">
+                                    <div class="card-body text-center">
+                                        <div class="rounded-circle mx-auto mb-3 overflow-hidden" style="width: 150px; height: 150px;">
+                                            <img src="/static/images/founder.jpg" alt="Neal Jain" class="img-fluid w-100 h-100 object-fit-cover">
+                                        </div>
+                                        <h5>Neal Jain</h5>
+                                        <p class="text-primary">Founder & CEO</p>
+                                        <p class="small fst-italic">"Our mission at Beyond Hunger is to create a sustainable food ecosystem where surplus meets scarcity, ensuring no one goes to bed hungry while eliminating food waste."</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4 mb-4">
+                                <div class="card h-100 team-card">
+                                    <div class="card-body text-center">
+                                        <div class="rounded-circle mx-auto mb-3 overflow-hidden" style="width: 150px; height: 150px;">
+                                            <img src="/static/images/co-founder.jpeg" alt="Shreyasi" class="img-fluid w-100 h-100 object-fit-cover">
+                                        </div>
+                                        <h5>Shreyasi</h5>
+                                        <p class="text-primary">Co-founder & COO</p>
+                                        <p class="small fst-italic">"Beyond Hunger represents our commitment to building lasting community connections through food redistribution, making every meal matter."</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4 mb-4">
+                                <div class="card h-100 team-card">
+                                    <div class="card-body text-center">
+                                        <div class="rounded-circle mx-auto mb-3 overflow-hidden" style="width: 150px; height: 150px;">
+                                            <img src="/static/images/co-founder2.jpeg" alt="Manali" class="img-fluid w-100 h-100 object-fit-cover">
+                                        </div>
+                                        <h5>Manali</h5>
+                                        <p class="text-primary">Co-founder & CTO</p>
+                                        <p class="small fst-italic">"Technology empowers us to bridge food gaps efficiently. At Beyond Hunger, we're using innovation to solve one of humanity's oldest challenges."</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-5">
+                    <div class="col-12 text-center animate-on-scroll">
+                        <h3>Join Our Cause</h3>
+                        <p class="lead mb-4">Together, we can make a difference in our community.</p>
+                        <a href="{% url 'donate' %}" class="btn btn-primary btn-lg me-3">
+                            <i class="fas fa-hand-holding-heart me-2"></i>Donate Food
+                        </a>
+                        <a href="{% url 'register' %}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-user-plus me-2"></i>Become a Volunteer
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Handle scroll animations
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get all elements that should be animated on scroll
+        const animatedElements = document.querySelectorAll('.animate-on-scroll');
+        
+        // Function to check if element is in viewport
+        function isInViewport(element) {
+            const rect = element.getBoundingClientRect();
+            return (
+                rect.top <= (window.innerHeight || document.documentElement.clientHeight) * 0.8
+            );
+        }
+        
+        // Function to handle scroll animation
+        function handleScrollAnimation() {
+            animatedElements.forEach(function(element) {
+                if (isInViewport(element)) {
+                    element.classList.add('visible');
+                }
+            });
+        }
+        
+        // Add event listener
+        window.addEventListener('scroll', handleScrollAnimation);
+        
+        // Trigger once on load
+        handleScrollAnimation();
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,1 @@
+web: gunicorn beyond_hunger.wsgi --log-file - 

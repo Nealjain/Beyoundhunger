@@ -1,0 +1,55 @@
+{% extends 'food_donation/base.html' %}
+
+{% block title %}Login - Beyond Hunger{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-6 mx-auto">
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0"><i class="fas fa-sign-in-alt me-2"></i>Login</h2>
+            </div>
+            <div class="card-body">
+                <p class="lead mb-4">Welcome back! Please enter your credentials to access your account.</p>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="mt-4 text-center">
+                    <p>Don't have an account? <a href="{% url 'register' %}" class="text-primary">Register here</a></p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-4 animate__animated animate__fadeIn animate__delay-1s">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-info-circle me-2 text-primary"></i>Having Trouble Logging In?</h5>
+                <p class="card-text">If you're having trouble accessing your account, please contact our support team at <a href="mailto:support@beyondhunger.org">support@beyondhunger.org</a> or call us at +1 (555) 123-4567.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

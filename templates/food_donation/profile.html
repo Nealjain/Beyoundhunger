@@ -1,0 +1,279 @@
+{% extends 'food_donation/base.html' %}
+
+{% block title %}Profile - Beyond Hunger{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0"><i class="fas fa-user-circle me-2"></i>My Profile</h2>
+            </div>
+            <div class="card-body">
+                <div class="row mb-5">
+                    <div class="col-md-4 text-center">
+                        <div class="rounded-circle bg-light mx-auto mb-3 d-flex align-items-center justify-content-center hover-scale" style="width: 150px; height: 150px;">
+                            <i class="fas fa-user fa-5x text-primary"></i>
+                        </div>
+                        <h3>{{ user.username }}</h3>
+                        <p class="text-muted">Member since {{ user.date_joined|date:"M d, Y" }}</p>
+                        
+                        <div class="d-flex justify-content-center mt-3">
+                            {% if profile.is_donor %}
+                            <span class="badge bg-primary me-2 hover-effect">Donor</span>
+                            {% endif %}
+                            
+                            {% if profile.is_volunteer %}
+                            <span class="badge bg-success hover-effect">Volunteer</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-8">
+                        <h4 class="mb-3">Account Information</h4>
+                        <div class="card mb-4 hover-lift">
+                            <div class="card-body">
+                                <div class="row mb-2 hover-highlight">
+                                    <div class="col-md-4">
+                                        <strong><i class="fas fa-envelope me-2 text-primary"></i>Email:</strong>
+                                    </div>
+                                    <div class="col-md-8">
+                                        {{ user.email }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-2 hover-highlight">
+                                    <div class="col-md-4">
+                                        <strong><i class="fas fa-phone me-2 text-primary"></i>Phone:</strong>
+                                    </div>
+                                    <div class="col-md-8">
+                                        {{ profile.phone }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row hover-highlight">
+                                    <div class="col-md-4">
+                                        <strong><i class="fas fa-map-marker-alt me-2 text-primary"></i>Address:</strong>
+                                    </div>
+                                    <div class="col-md-8">
+                                        {{ profile.address }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if profile.is_volunteer and volunteer %}
+                        <h4 class="mb-3">Volunteer Information</h4>
+                        <div class="card hover-lift">
+                            <div class="card-body">
+                                <div class="row mb-2 hover-highlight">
+                                    <div class="col-md-4">
+                                        <strong><i class="fas fa-car me-2 text-primary"></i>Vehicle Type:</strong>
+                                    </div>
+                                    <div class="col-md-8">
+                                        {{ volunteer.vehicle_type|default:"Not specified" }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-2 hover-highlight">
+                                    <div class="col-md-4">
+                                        <strong><i class="fas fa-map me-2 text-primary"></i>Service Area:</strong>
+                                    </div>
+                                    <div class="col-md-8">
+                                        {{ volunteer.service_area }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row hover-highlight">
+                                    <div class="col-md-4">
+                                        <strong><i class="fas fa-toggle-on me-2 text-primary"></i>Availability:</strong>
+                                    </div>
+                                    <div class="col-md-8">
+                                        {% if volunteer.availability %}
+                                        <span class="badge bg-success hover-effect">Available</span>
+                                        {% else %}
+                                        <span class="badge bg-warning hover-effect">Not Available</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- My Donations Section -->
+                {% if profile.is_donor and donations %}
+                <h3 class="mb-4"><i class="fas fa-hand-holding-heart me-2 text-primary"></i>My Donations</h3>
+                <div class="table-responsive mb-5">
+                    <table class="table table-hover table-animated">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Food Type</th>
+                                <th>Quantity</th>
+                                <th>Pickup Date</th>
+                                <th>Status</th>
+                                <th>Payment</th>
+                                <th>Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for donation in donations %}
+                            <tr class="table-row-hover">
+                                <td>{{ donation.food_type }}</td>
+                                <td>{{ donation.quantity }}</td>
+                                <td>{{ donation.pickup_date|date:"M d, Y" }}</td>
+                                <td>
+                                    <span class="badge {% if donation.status == 'delivered' %}bg-success{% elif donation.status == 'pending' %}bg-warning{% else %}bg-primary{% endif %} hover-effect">
+                                        {{ donation.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if donation.payment_method %}
+                                    <span class="badge {% if donation.payment_status == 'completed' %}bg-success{% elif donation.payment_status == 'pending' %}bg-warning{% else %}bg-danger{% endif %} hover-effect">
+                                        {{ donation.get_payment_status_display }}
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-secondary hover-effect">None</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ donation.created_at|date:"M d, Y" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% elif profile.is_donor %}
+                <div class="card mb-5 hover-lift">
+                    <div class="card-body text-center py-5">
+                        <h4 class="mb-3">You haven't made any donations yet</h4>
+                        <p class="mb-4">Help us reduce food waste and support those in need by making a food donation today.</p>
+                        <a href="{% url 'donate' %}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-2"></i>Make a Donation
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Volunteer Assignments Section -->
+                {% if profile.is_volunteer and assignments %}
+                <h3 class="mb-4"><i class="fas fa-truck me-2 text-primary"></i>My Delivery Assignments</h3>
+                <div class="table-responsive">
+                    <table class="table table-hover table-animated">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Food Type</th>
+                                <th>Pickup Address</th>
+                                <th>Pickup Time</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for assignment in assignments %}
+                            <tr class="table-row-hover">
+                                <td>{{ assignment.donation.food_type }}</td>
+                                <td>{{ assignment.donation.pickup_address }}</td>
+                                <td>{{ assignment.pickup_time|date:"M d, Y H:i" }}</td>
+                                <td>
+                                    <span class="badge {% if assignment.status == 'delivered' %}bg-success{% elif assignment.status == 'assigned' %}bg-warning{% else %}bg-primary{% endif %} hover-effect">
+                                        {{ assignment.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if assignment.status == 'assigned' %}
+                                    <a href="#" class="btn btn-sm btn-outline-primary hover-grow">
+                                        <i class="fas fa-check me-1"></i>Mark as Picked Up
+                                    </a>
+                                    {% elif assignment.status == 'picked_up' %}
+                                    <a href="#" class="btn btn-sm btn-outline-success hover-grow">
+                                        <i class="fas fa-check-double me-1"></i>Mark as Delivered
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+                
+                <div class="d-flex justify-content-center mt-5">
+                    <a href="#" class="btn btn-outline-primary me-3 hover-grow">
+                        <i class="fas fa-edit me-2"></i>Edit Profile
+                    </a>
+                    <a href="{% url 'logout' %}" class="btn btn-outline-danger hover-grow">
+                        <i class="fas fa-sign-out-alt me-2"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-highlight:hover {
+        background-color: var(--secondary-color);
+        border-radius: 5px;
+        padding: 3px;
+        transition: all 0.3s ease;
+    }
+    
+    .hover-scale {
+        transition: all 0.3s ease;
+    }
+    
+    .hover-scale:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    
+    .hover-effect {
+        transition: all 0.3s ease;
+    }
+    
+    .hover-effect:hover {
+        transform: scale(1.1);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    
+    .hover-lift {
+        transition: all 0.3s ease;
+    }
+    
+    .hover-lift:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    }
+    
+    .hover-grow {
+        transition: all 0.3s ease;
+    }
+    
+    .hover-grow:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .table-animated tr {
+        transition: all 0.3s ease;
+    }
+    
+    .table-animated tr:hover {
+        background-color: var(--secondary-color);
+        transform: translateX(5px);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .table-row-hover {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .table-row-hover:hover {
+        background-color: var(--secondary-color);
+        transform: translateX(5px) translateY(-2px);
+        box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %} 

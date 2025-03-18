@@ -1,0 +1,144 @@
+{% extends 'food_donation/base.html' %}
+
+{% block title %}Register - Beyond Hunger{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0"><i class="fas fa-user-plus me-2"></i>Register</h2>
+            </div>
+            <div class="card-body">
+                <p class="lead mb-4">Join our community to start donating food or volunteering to help others.</p>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h4 class="mb-3">Account Information</h4>
+                            
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="username" name="username" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="password" name="password" required>
+                                <div class="form-text">Password must be at least 8 characters long.</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="password_confirm" class="form-label">Confirm Password</label>
+                                <input type="password" class="form-control" id="password_confirm" name="password_confirm" required>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h4 class="mb-3">Personal Information</h4>
+                            
+                            <div class="mb-3">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="address" class="form-label">Address</label>
+                                <textarea class="form-control" id="address" name="address" rows="3" required></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="is_donor" name="is_donor" checked>
+                                    <label class="form-check-label" for="is_donor">
+                                        I want to register as a food donor
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="is_volunteer" name="is_volunteer">
+                                    <label class="form-check-label" for="is_volunteer">
+                                        I want to register as a volunteer
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="volunteer_section" class="mt-4" style="display: none;">
+                        <h4 class="mb-3">Volunteer Information</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="vehicle_type" class="form-label">Vehicle Type (if any)</label>
+                                    <select class="form-select" id="vehicle_type" name="vehicle_type">
+                                        <option value="">None</option>
+                                        <option value="car">Car</option>
+                                        <option value="bike">Bike/Motorcycle</option>
+                                        <option value="van">Van/Truck</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="service_area" class="form-label">Service Area</label>
+                                    <input type="text" class="form-control" id="service_area" name="service_area" placeholder="e.g., Downtown, South Side">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
+                            <label class="form-check-label" for="terms">
+                                I agree to the <a href="#" class="text-primary">Terms and Conditions</a> and <a href="#" class="text-primary">Privacy Policy</a>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-user-plus me-2"></i>Create Account
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="mt-4 text-center">
+                    <p>Already have an account? <a href="{% url 'login' %}" class="text-primary">Login here</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const volunteerCheckbox = document.getElementById('is_volunteer');
+        const volunteerSection = document.getElementById('volunteer_section');
+        
+        function toggleVolunteerSection() {
+            if (volunteerCheckbox.checked) {
+                volunteerSection.style.display = 'block';
+            } else {
+                volunteerSection.style.display = 'none';
+            }
+        }
+        
+        // Call once initially
+        toggleVolunteerSection();
+        
+        // Add event listener
+        volunteerCheckbox.addEventListener('change', toggleVolunteerSection);
+    });
+</script>
+{% endblock %} 
