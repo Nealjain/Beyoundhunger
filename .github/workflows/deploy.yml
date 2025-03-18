@@ -6,7 +6,22 @@ on:
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
+  check_secrets:
+    runs-on: ubuntu-latest
+    outputs:
+      has_secrets: ${{ steps.check.outputs.has_secrets }}
+    steps:
+      - id: check
+        run: |
+          if [ "${{ secrets.PYTHONANYWHERE_API_TOKEN }}" != '' ] && [ "${{ secrets.PYTHONANYWHERE_USERNAME }}" != '' ]; then
+            echo "has_secrets=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_secrets=false" >> $GITHUB_OUTPUT
+          fi
+          
   deploy:
+    needs: check_secrets
+    if: needs.check_secrets.outputs.has_secrets == 'true'
     runs-on: ubuntu-latest
     
     steps:
