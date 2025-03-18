@@ -29,28 +29,28 @@ jobs:
         PA_USERNAME: ${{ secrets.PYTHONANYWHERE_USERNAME }}
       run: |
         # Create a simple deploy script
-        echo "
-import os
-import requests
+        cat > deploy_script.py << 'EOF'
+        import os
+        import requests
 
-username = os.environ.get('PA_USERNAME')
-token = os.environ.get('PA_API_TOKEN')
+        username = os.environ.get('PA_USERNAME')
+        token = os.environ.get('PA_API_TOKEN')
 
-if not username or not token:
-    print('Error: Environment variables PA_USERNAME and PA_API_TOKEN must be set')
-    exit(1)
+        if not username or not token:
+            print('Error: Environment variables PA_USERNAME and PA_API_TOKEN must be set')
+            exit(1)
 
-print('Deploying to PythonAnywhere...')
-response = requests.post(
-    f'https://www.pythonanywhere.com/api/v0/user/{username}/webapps/{username}.pythonanywhere.com/reload/',
-    headers={'Authorization': f'Token {token}'}
-)
+        print('Deploying to PythonAnywhere...')
+        response = requests.post(
+            f'https://www.pythonanywhere.com/api/v0/user/{username}/webapps/{username}.pythonanywhere.com/reload/',
+            headers={'Authorization': f'Token {token}'}
+        )
 
-if response.status_code == 200:
-    print('Deployment successful!')
-else:
-    print(f'Deployment failed: {response.status_code} {response.text}')
-    exit(1)
-        " > deploy_script.py
+        if response.status_code == 200:
+            print('Deployment successful!')
+        else:
+            print(f'Deployment failed: {response.status_code} {response.text}')
+            exit(1)
+        EOF
         
         python deploy_script.py 
