@@ -2,6 +2,10 @@
 
 Beyond Hunger is a web application that connects food donors with volunteers who can deliver surplus food to those in need. The platform helps reduce food waste and combats hunger by creating a sustainable food ecosystem.
 
+## Live Demo
+
+Check out our live demo at: https://nealjain.pythonanywhere.com/
+
 ## Features
 
 - **Food Donation Management**: Allow restaurants, catering services, and individuals to donate surplus food
@@ -10,6 +14,7 @@ Beyond Hunger is a web application that connects food donors with volunteers who
 - **Real-time Status Updates**: Track donations from submission to delivery
 - **Admin Dashboard**: Comprehensive admin interface for managing donations and volunteers
 - **Responsive Design**: Mobile-friendly interface accessible on any device
+- **Automated Deployment**: Changes are automatically deployed to PythonAnywhere
 
 ## Technology Stack
 
@@ -17,7 +22,8 @@ Beyond Hunger is a web application that connects food donors with volunteers who
 - **Frontend**: HTML, CSS, JavaScript, Bootstrap
 - **Database**: SQLite (development), PostgreSQL (production optional)
 - **Authentication**: Django Authentication System
-- **Deployment**: Supports deployment on PythonAnywhere, Render, or other platforms
+- **Deployment**: Automatic deployment to PythonAnywhere via GitHub Actions
+- **Continuous Integration**: GitHub Actions workflow for testing and deployment
 
 ## Installation
 
