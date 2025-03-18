@@ -23,8 +23,8 @@ Beyond Hunger is a web application that connects food donors with volunteers who
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/beyond-hunger.git
-   cd beyond-hunger
+   git clone https://github.com/Nealjain/Beyoundhunger.git
+   cd Beyoundhunger
    ```
 
 2. Create a virtual environment:
@@ -98,4 +98,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Contact
 
-If you have any questions or suggestions, please open an issue or contact us at example@beyondhunger.com. 
+If you have any questions or suggestions, please open an issue or contact us at example@beyondhunger.com.
