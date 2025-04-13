@@ -1,16 +1,34 @@
 #!/bin/bash
-set -euo pipefail
 
-# Upgrade pip
-python -m pip install --upgrade pip
+# Exit on error
+set -e
+
+echo "-------------------------------------"
+echo "Setting up Beyond Hunger application"
+echo "-------------------------------------"
+
+# Create required directories
+echo "Creating required directories..."
+mkdir -p staticfiles
+mkdir -p media
 
 # Install dependencies
-python -m pip install -r requirements.txt
+echo "Installing dependencies..."
+pip install --upgrade pip
+pip install -r requirements.txt
 
-# Collect static files
-python manage.py collectstatic --noinput
-
-# Run migrations
+# Apply migrations
+echo "Applying database migrations..."
 python manage.py migrate
 
-echo "Build completed successfully!" 
+# Collect static files
+echo "Collecting static files..."
+python manage.py collectstatic --noinput
+
+# Create user profiles if needed
+echo "Creating user profiles if needed..."
+python manage.py create_user_profile
+
+echo "-------------------------------------"
+echo "Build completed successfully"
+echo "-------------------------------------" 

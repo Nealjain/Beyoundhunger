@@ -28,15 +28,13 @@ except ImportError:
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# Use environment variable or generate a random key
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '^r$324y@1da*aced0%as@c@6j*h%m*&+ym#a@=6(yng6evujsh')
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-qwxj%y^h-fvgx&nq!18_dtn-&i4--7!%kdt%*3ov#(qxx@c%4-')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# Get debug value from environment variable or default to False
-DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() == 'true'
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
 # Allow all hosts by default, but override in production
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 
 # Application definition
@@ -182,10 +180,10 @@ LOGOUT_REDIRECT_URL = 'food_donation:home'
 
 # Session and CSRF settings
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
-SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+SESSION_COOKIE_SECURE = False  # Keep False for now until HTTPS is working
 SESSION_SAVE_EVERY_REQUEST = True  # Update the session expiry on every request
 CSRF_COOKIE_AGE = 31449600  # 1 year in seconds
-CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
+CSRF_COOKIE_SECURE = False  # Keep False for now until HTTPS is working
 CSRF_USE_SESSIONS = False  # Store CSRF token in cookie, not session
 CSRF_COOKIE_HTTPONLY = False  # JavaScript needs to access the cookie
 
@@ -202,5 +200,15 @@ REST_FRAMEWORK = {
 
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # Only allow all origins in development
-CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:8000').split(',')
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:8000,http://127.0.0.1:8000').split(',')
 CORS_ALLOW_CREDENTIALS = True
+
+# CSRF Trusted Origins - Added for PythonAnywhere
+CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000,http://127.0.0.1:8000').split(',')
+
+# Whitenoise configuration for serving static files in production
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Add Whitenoise to middleware if not already there
+if 'whitenoise.middleware.WhiteNoiseMiddleware' not in MIDDLEWARE:
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
