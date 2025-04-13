@@ -85,3 +85,113 @@ class DeliveryAssignment(models.Model):
 
     def __str__(self):
         return f"Delivery by {self.volunteer.user.username} for {self.donation}"
+
+class MarketplaceItem(models.Model):
+    CATEGORY_CHOICES = [
+        ('produce', 'Fresh Produce'),
+        ('pantry', 'Pantry Items'),
+        ('dairy', 'Dairy & Eggs'),
+        ('bakery', 'Bakery Items'),
+        ('prepared', 'Prepared Foods'),
+        ('other', 'Other'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('available', 'Available'),
+        ('pending', 'Pending Pickup'),
+        ('completed', 'Completed'),
+        ('expired', 'Expired'),
+    ]
+    
+    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='marketplace_items')
+    title = models.CharField(max_length=100)
+    description = models.TextField()
+    price = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)
+    is_free = models.BooleanField(default=False)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='other')
+    quantity = models.CharField(max_length=50)
+    expiry_date = models.DateField(blank=True, null=True)
+    location = models.CharField(max_length=255)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
+    image = models.ImageField(upload_to='marketplace/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return self.title
+    
+    def is_expired(self):
+        if not self.expiry_date:
+            return False
+            
+        # If expiry_date is a string, convert it to a date object
+        if isinstance(self.expiry_date, str):
+            try:
+                from datetime import datetime
+                expiry_date = datetime.strptime(self.expiry_date, '%Y-%m-%d').date()
+            except ValueError:
+                # If conversion fails, return False
+                return False
+        else:
+            expiry_date = self.expiry_date
+            
+        # Compare with current date
+        if expiry_date < timezone.now().date():
+            return True
+        return False
+    
+    def save(self, *args, **kwargs):
+        if self.is_expired() and self.status != 'expired':
+            self.status = 'expired'
+        super().save(*args, **kwargs)
+
+class MarketplaceLister(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending Approval'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    business_name = models.CharField(max_length=100, blank=True, null=True)
+    id_verification = models.CharField(max_length=100, help_text="ID number for verification")
+    contact_phone = models.CharField(max_length=20)
+    address = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    approved_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.user.username} - Marketplace Lister"
+        
+    def is_approved(self):
+        return self.status == 'approved'
+
+class IDVerificationImage(models.Model):
+    """Model to store multiple ID verification images for MarketplaceLister"""
+    lister = models.ForeignKey(MarketplaceLister, on_delete=models.CASCADE, related_name='id_images')
+    image = models.ImageField(upload_to='id_verification/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"ID Image for {self.lister.user.username}"
+
+class FoodDonationImage(models.Model):
+    """Model to store multiple images for food donations"""
+    donation = models.ForeignKey(FoodDonation, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='food_donations/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Image for donation by {self.donation.donor.username}"
+
+class MarketplaceItemImage(models.Model):
+    """Model to store multiple images for marketplace items"""
+    item = models.ForeignKey(MarketplaceItem, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='marketplace/multi/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    description = models.CharField(max_length=255, blank=True, null=True)
+    
+    def __str__(self):
+        return f"Image for {self.item.title}"

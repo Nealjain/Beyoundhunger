@@ -1,113 +1,121 @@
 {% extends 'food_donation/base.html' %}
+{% load static %}
 
 {% block title %}About Us - Beyond Hunger{% endblock %}
 
-{% block extra_css %}
+{% block extra_head %}
 <style>
-    .team-card {
-        transition: all 0.3s ease;
-        border: 1px solid rgba(0,0,0,0.125);
-    }
-    .team-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 15px 30px rgba(0,0,0,0.1);
-        border-color: #4caf50;
-    }
-    .team-card img {
-        transition: all 0.5s ease;
-    }
-    .team-card:hover img {
-        transform: scale(1.1);
-    }
-    .animate-on-scroll {
-        opacity: 0;
-        transform: translateY(20px);
-        transition: all 0.8s ease;
-    }
-    .animate-on-scroll.visible {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.team-card {
+    transition: transform 0.3s ease;
+}
+
+.team-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+}
+
+.team-card img {
+    transition: all 0.3s ease;
+}
+.team-card:hover img {
+    transform: scale(1.05);
+}
+
+.highlight-box {
+    position: relative;
+    padding: 1.5rem;
+    border-radius: 10px;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.highlight-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--primary-color);
+    opacity: 0.1;
+    z-index: -1;
+    border-radius: 10px;
+}
+
+.animate-on-scroll {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.animate-on-scroll.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.milestone-counter {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-lg-10 mx-auto">
-        <div class="card animate__animated animate__fadeIn">
-            <div class="card-header bg-primary text-white">
-                <h2 class="mb-0"><i class="fas fa-info-circle me-2"></i>About Beyond Hunger</h2>
-            </div>
-            <div class="card-body">
-                <div class="row mb-5">
-                    <div class="col-md-6 animate-on-scroll">
-                        <h3 class="mb-4">Our Mission</h3>
-                        <p class="lead">At Beyond Hunger, we believe that no one should go hungry when food is being wasted every day.</p>
-                        <p>Our mission is to create a sustainable food ecosystem by connecting food donors with those in need, reducing food waste, and ensuring that nutritious food reaches everyone in our community.</p>
-                        <p>We leverage technology to make food donation simple, efficient, and accessible, while building a network of dedicated volunteers who help us bridge the gap between excess food and hunger.</p>
-                    </div>
-                    <div class="col-md-6 animate-on-scroll">
-                        <img src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Community Food Distribution" class="img-fluid rounded">
-                    </div>
-                </div>
-
-                <div class="row mb-5">
-                    <div class="col-md-6 order-md-2 animate-on-scroll">
-                        <h3 class="mb-4">Our Vision</h3>
-                        <p>We envision a world where:</p>
-                        <ul>
-                            <li>No food goes to waste while people go hungry</li>
-                            <li>Every community has reliable access to nutritious food</li>
-                            <li>Food donors and recipients are connected seamlessly</li>
-                            <li>Volunteers feel empowered to make a difference</li>
-                            <li>Technology is used to solve social challenges</li>
-                        </ul>
-                        <p>Through our platform, we aim to create lasting change in how communities think about food waste and hunger, fostering a culture of sharing and sustainability.</p>
-                    </div>
-                    <div class="col-md-6 order-md-1 animate-on-scroll">
-                        <img src="https://images.unsplash.com/photo-1544060607-b5f16975d611?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Volunteers Working" class="img-fluid rounded">
-                    </div>
-                </div>
-
+<div class="container mt-5">
+    <div class="row">
+        <div class="col">
+            <div class="container">
                 <div class="row">
                     <div class="col-12 animate-on-scroll">
-                        <h3 class="mb-4 text-center">Our Team</h3>
-                        <div class="row justify-content-center">
+                        <h1 class="display-4 text-center mb-5">About Beyond Hunger</h1>
+                        <div class="row align-items-center">
+                            <div class="col-lg-6">
+                                <div class="highlight-box mb-4">
+                                    <h2>Our Mission</h2>
+                                    <p class="lead">We are dedicated to reducing food waste and fighting hunger in our communities by connecting surplus food with those who need it most.</p>
+                                </div>
+                                <p>At Beyond Hunger, we believe that no one should go hungry while perfectly good food goes to waste. Our platform facilitates the donation and distribution of excess food to individuals and families facing food insecurity.</p>
+                                <p>Founded in 2022, our organization has grown into a community-driven movement of volunteers, donors, and supporters committed to creating a more sustainable and equitable food system.</p>
+                            </div>
+                            <div class="col-lg-6 text-center">
+                                <img src="/static/images/about-mission.jpg" alt="Our Mission" class="img-fluid rounded-3 shadow-lg">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-5">
+                    <div class="col-12 animate-on-scroll">
+                        <h3 class="text-center mb-4">Our Impact</h3>
+                        <div class="row text-center">
                             <div class="col-md-4 mb-4">
-                                <div class="card h-100 team-card">
-                                    <div class="card-body text-center">
-                                        <div class="rounded-circle mx-auto mb-3 overflow-hidden" style="width: 150px; height: 150px;">
-                                            <img src="/static/images/founder.jpg" alt="Neal Jain" class="img-fluid w-100 h-100 object-fit-cover">
-                                        </div>
-                                        <h5>Neal Jain</h5>
-                                        <p class="text-primary">Founder & CEO</p>
-                                        <p class="small fst-italic">"Our mission at Beyond Hunger is to create a sustainable food ecosystem where surplus meets scarcity, ensuring no one goes to bed hungry while eliminating food waste."</p>
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <i class="fas fa-utensils fa-3x text-primary mb-3"></i>
+                                        <div class="milestone-counter">5,000+</div>
+                                        <h5>Meals Donated</h5>
+                                        <p>Nutritious meals distributed to those in need across our communities.</p>
                                     </div>
                                 </div>
                             </div>
-
                             <div class="col-md-4 mb-4">
-                                <div class="card h-100 team-card">
-                                    <div class="card-body text-center">
-                                        <div class="rounded-circle mx-auto mb-3 overflow-hidden" style="width: 150px; height: 150px;">
-                                            <img src="/static/images/co-founder.jpeg" alt="Shreyasi" class="img-fluid w-100 h-100 object-fit-cover">
-                                        </div>
-                                        <h5>Shreyasi</h5>
-                                        <p class="text-primary">Co-founder & COO</p>
-                                        <p class="small fst-italic">"Beyond Hunger represents our commitment to building lasting community connections through food redistribution, making every meal matter."</p>
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                                        <div class="milestone-counter">200+</div>
+                                        <h5>Volunteers</h5>
+                                        <p>Dedicated individuals helping us collect and distribute food donations.</p>
                                     </div>
                                 </div>
                             </div>
-
                             <div class="col-md-4 mb-4">
-                                <div class="card h-100 team-card">
-                                    <div class="card-body text-center">
-                                        <div class="rounded-circle mx-auto mb-3 overflow-hidden" style="width: 150px; height: 150px;">
-                                            <img src="/static/images/co-founder2.jpeg" alt="Manali" class="img-fluid w-100 h-100 object-fit-cover">
-                                        </div>
-                                        <h5>Manali</h5>
-                                        <p class="text-primary">Co-founder & CTO</p>
-                                        <p class="small fst-italic">"Technology empowers us to bridge food gaps efficiently. At Beyond Hunger, we're using innovation to solve one of humanity's oldest challenges."</p>
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <i class="fas fa-leaf fa-3x text-primary mb-3"></i>
+                                        <div class="milestone-counter">2,500+</div>
+                                        <h5>Kg Food Waste Saved</h5>
+                                        <p>Reducing environmental impact while addressing food insecurity.</p>
                                     </div>
                                 </div>
                             </div>
@@ -119,10 +127,10 @@
                     <div class="col-12 text-center animate-on-scroll">
                         <h3>Join Our Cause</h3>
                         <p class="lead mb-4">Together, we can make a difference in our community.</p>
-                        <a href="{% url 'donate' %}" class="btn btn-primary btn-lg me-3">
+                        <a href="{% url 'food_donation:donate' %}" class="btn btn-primary btn-lg me-3">
                             <i class="fas fa-hand-holding-heart me-2"></i>Donate Food
                         </a>
-                        <a href="{% url 'register' %}" class="btn btn-outline-primary btn-lg">
+                        <a href="{% url 'food_donation:register' %}" class="btn btn-outline-primary btn-lg">
                             <i class="fas fa-user-plus me-2"></i>Become a Volunteer
                         </a>
                     </div>

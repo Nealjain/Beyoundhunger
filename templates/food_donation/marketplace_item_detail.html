@@ -1,0 +1,243 @@
+{% extends 'food_donation/base.html' %}
+{% load static %}
+
+{% block title %}{{ item.title }} - Marketplace{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'food_donation:home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'food_donation:marketplace' %}">Marketplace</a></li>
+            <li class="breadcrumb-item active">{{ item.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                {% if item.image %}
+                <div id="itemImageCarousel" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-inner">
+                        <div class="carousel-item active">
+                            <img src="{{ item.image.url }}" class="d-block w-100" alt="{{ item.title }}" style="max-height: 400px; object-fit: contain;">
+                        </div>
+                        
+                        {% for img in additional_images %}
+                        <div class="carousel-item">
+                            <img src="{{ img.image.url }}" class="d-block w-100" alt="{{ item.title }}" style="max-height: 400px; object-fit: contain;">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if additional_images|length > 0 %}
+                    <button class="carousel-control-prev" type="button" data-bs-target="#itemImageCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#itemImageCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                    
+                    <div class="mt-2 d-flex justify-content-center">
+                        <div class="d-flex gap-1">
+                            <button type="button" data-bs-target="#itemImageCarousel" data-bs-slide-to="0" class="active" aria-current="true" 
+                                    style="width: 50px; height: 50px; padding: 0; border: 2px solid #ccc; overflow: hidden;">
+                                <img src="{{ item.image.url }}" alt="Thumbnail" style="width: 100%; height: 100%; object-fit: cover;">
+                            </button>
+                            
+                            {% for img in additional_images %}
+                            <button type="button" data-bs-target="#itemImageCarousel" data-bs-slide-to="{{ forloop.counter }}" 
+                                    style="width: 50px; height: 50px; padding: 0; border: 2px solid #ccc; overflow: hidden;">
+                                <img src="{{ img.image.url }}" alt="Thumbnail" style="width: 100%; height: 100%; object-fit: cover;">
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="bg-light d-flex align-items-center justify-content-center py-5">
+                    <i class="fas fa-shopping-basket fa-5x text-muted"></i>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h1 class="card-title mb-1">{{ item.title }}</h1>
+                            <p class="text-muted mb-2">Posted by {{ item.seller.username }} on {{ item.created_at|date:"M d, Y" }}</p>
+                        </div>
+                        <div>
+                            {% if item.is_free %}
+                            <span class="badge bg-success fs-5 px-3 py-2">FREE</span>
+                            {% else %}
+                            <span class="badge bg-primary fs-5 px-3 py-2">₹{{ item.price|default:"Price not specified" }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-3 mb-4">
+                        <div class="d-flex">
+                            <div class="me-4">
+                                <small class="text-muted d-block">Category</small>
+                                <span class="fw-bold">{{ item.get_category_display }}</span>
+                            </div>
+                            <div class="me-4">
+                                <small class="text-muted d-block">Status</small>
+                                <span class="fw-bold">{{ item.get_status_display }}</span>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block">Quantity</small>
+                                <span class="fw-bold">{{ item.quantity }}</span>
+                            </div>
+                        </div>
+                        <div>
+                            <small class="text-muted d-block">Location</small>
+                            <span>{{ item.location }}</span>
+                        </div>
+                    </div>
+
+                    {% if item.expiry_date %}
+                    <div class="alert {% if item.is_expired %}alert-danger{% else %}alert-warning{% endif %} mb-3">
+                        <i class="fas fa-clock me-2"></i>
+                        {% if item.is_expired %}
+                        <strong>Expired on:</strong> {{ item.expiry_date|date:"M d, Y" }} (Item may no longer be available)
+                        {% else %}
+                        <strong>Expiry date:</strong> {{ item.expiry_date|date:"M d, Y" }}
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <h5 class="mb-3">Description</h5>
+                    <p class="card-text">{{ item.description|linebreaks }}</p>
+                    
+                    {% if is_owner %}
+                    <div class="border-top pt-3 mt-4">
+                        <h5 class="mb-3">Manage Your Listing</h5>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'food_donation:edit_marketplace_item' item.pk %}" class="btn btn-primary"><i class="fas fa-edit me-2"></i>Edit Listing</a>
+                            <a href="{% url 'food_donation:delete_marketplace_item' item.pk %}" class="btn btn-danger"><i class="fas fa-trash me-2"></i>Delete</a>
+                            
+                            {% if item.status != "expired" %}
+                            <div class="dropdown">
+                                <button class="btn btn-outline-primary dropdown-toggle" type="button" id="statusDropdown" data-bs-toggle="dropdown">
+                                    <i class="fas fa-tag me-2"></i>Update Status
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="statusDropdown">
+                                    {% for status_value, status_name in item.STATUS_CHOICES %}
+                                    <li>
+                                        <form method="post" action="{% url 'food_donation:update_marketplace_status' item.pk %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="status" value="{{ status_value }}">
+                                            <button type="submit" class="dropdown-item {% if item.status == status_value %}active{% endif %}">
+                                                {{ status_name }}
+                                            </button>
+                                        </form>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-phone-alt me-2"></i>Contact Information</h5>
+                </div>
+                <div class="card-body">
+                    {% if user.is_authenticated %}
+                        <p><strong>{{ item.seller.username }}</strong> is offering this item.</p>
+                        
+                        <div class="d-grid gap-2">
+                            <a href="mailto:{{ item.seller.email }}" class="btn btn-outline-primary">
+                                <i class="fas fa-envelope me-2"></i>Contact via Email
+                            </a>
+                            {% if item.status == 'available' and not is_owner %}
+                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#interestModal">
+                                <i class="fas fa-hand-paper me-2"></i>I'm Interested
+                            </button>
+                            {% endif %}
+                        </div>
+                        
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>Please <a href="{% url 'food_donation:login' %}?next={{ request.path }}">login</a> to contact the seller.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Safety Tips</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i>Meet in a public place
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i>Check food quality before accepting
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i>Verify expiration dates
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i>Tell someone about your meetup
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Similar Items</h5>
+                    <p class="card-text text-muted">Check the marketplace for similar items in the same category.</p>
+                    <a href="{% url 'food_donation:marketplace' %}?category={{ item.category }}" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-search me-2"></i>Browse Similar Items
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Interest Modal -->
+<div class="modal fade" id="interestModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Contact Seller</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>You're interested in <strong>{{ item.title }}</strong>.</p>
+                <p>Send a message to the seller using the form below:</p>
+                <form method="post" action="#">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Your Message</label>
+                        <textarea class="form-control" id="message" rows="3" placeholder="Hi, I'm interested in your item. Is it still available? When can we meet?"></textarea>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-paper-plane me-2"></i>Send Message
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+                <div class="alert alert-info mt-3 small">
+                    <i class="fas fa-info-circle me-2"></i>For now, this will send an email to the seller. In the future, we plan to add in-app messaging.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

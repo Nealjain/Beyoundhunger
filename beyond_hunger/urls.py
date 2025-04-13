@@ -18,8 +18,12 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # Add a home URL that redirects to the food_donation home
+    path('home/', RedirectView.as_view(pattern_name='food_donation:home'), name='home'),
+    # Include food_donation URLs with their namespace
     path('', include('food_donation.urls')),  # Include food_donation URLs
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)  # Serve media files in development

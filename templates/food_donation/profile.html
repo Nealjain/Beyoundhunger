@@ -148,7 +148,7 @@
                     <div class="card-body text-center py-5">
                         <h4 class="mb-3">You haven't made any donations yet</h4>
                         <p class="mb-4">Help us reduce food waste and support those in need by making a food donation today.</p>
-                        <a href="{% url 'donate' %}" class="btn btn-primary">
+                        <a href="{% url 'food_donation:donate' %}" class="btn btn-primary">
                             <i class="fas fa-plus-circle me-2"></i>Make a Donation
                         </a>
                     </div>
@@ -202,7 +202,7 @@
                     <a href="#" class="btn btn-outline-primary me-3 hover-grow">
                         <i class="fas fa-edit me-2"></i>Edit Profile
                     </a>
-                    <a href="{% url 'logout' %}" class="btn btn-outline-danger hover-grow">
+                    <a href="{% url 'food_donation:logout' %}" class="btn btn-outline-danger hover-grow">
                         <i class="fas fa-sign-out-alt me-2"></i>Logout
                     </a>
                 </div>

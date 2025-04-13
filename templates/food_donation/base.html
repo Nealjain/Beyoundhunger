@@ -24,18 +24,17 @@
         .navbar-custom {
             background-color: var(--primary-color);
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
 
         .navbar-custom .navbar-brand,
         .navbar-custom .nav-link {
             color: white;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
 
         .navbar-custom .nav-link:hover {
             color: var(--secondary-color) !important;
-            transform: translateY(-2px);
         }
 
         .hero-section {
@@ -66,43 +65,39 @@
 
         .card {
             margin-bottom: 1.5rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
             border: none;
             border-radius: 10px;
             overflow: hidden;
         }
 
         .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
-            border-top: 3px solid var(--accent-color);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
 
         .btn-primary {
             background-color: var(--accent-color);
             border-color: var(--accent-color);
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
 
         .btn-primary:hover {
             background-color: var(--primary-color);
             border-color: var(--primary-color);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .btn-outline-primary {
             color: var(--accent-color);
             border-color: var(--accent-color);
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
 
         .btn-outline-primary:hover {
             background-color: var(--accent-color);
             color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .stats-card {
@@ -110,13 +105,12 @@
             border-radius: 10px;
             padding: 2rem;
             text-align: center;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             border-bottom: 3px solid transparent;
         }
 
         .stats-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             border-bottom: 3px solid var(--accent-color);
         }
 
@@ -129,7 +123,7 @@
         .animate-on-scroll {
             opacity: 0;
             transform: translateY(20px);
-            transition: all 0.6s ease;
+            transition: all 0.4s ease;
         }
 
         .animate-on-scroll.visible {
@@ -142,14 +136,13 @@
             border-radius: 10px;
             padding: 1.5rem;
             margin-bottom: 1rem;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             cursor: pointer;
         }
 
         .payment-option:hover {
             border-color: var(--accent-color);
             background-color: var(--secondary-color);
-            transform: translateY(-3px);
         }
 
         .payment-option.selected {
@@ -188,9 +181,9 @@
             background-color: var(--primary-color) !important;
         }
 
-        /* Enhanced hover effects for all interactive elements */
+        /* Simplified hover effects for all interactive elements */
         a {
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
         
         a:hover:not(.btn):not(.navbar-brand):not(.nav-link) {
@@ -214,12 +207,12 @@
         }
         
         .btn {
-            transition: all 0.3s ease;
+            transition: none;
         }
         
         .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            transform: none !important;
+            box-shadow: none !important;
         }
         
         .table tr {
@@ -262,11 +255,11 @@
         
         /* Badge hover */
         .badge {
-            transition: all 0.3s ease;
+            transition: none;
         }
         
         .badge:hover {
-            transform: scale(1.1);
+            transform: none !important;
         }
         
         /* Images hover effect */
@@ -293,22 +286,22 @@
         .card {
             margin-bottom: 1.5rem;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
+            transition: none;
             border: none;
             border-radius: 10px;
             overflow: hidden;
         }
         
         .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 20px rgba(0,0,0,0.2);
-            border-top: 3px solid var(--accent-color);
+            transform: none !important;
+            box-shadow: none !important;
         }
         
         /* Navbar hover enhancements */
         .navbar-custom .nav-link {
             position: relative;
             padding-bottom: 0.25rem;
+            transition: none;
         }
         
         .navbar-custom .nav-link::after {
@@ -325,13 +318,126 @@
         .navbar-custom .nav-link:hover::after {
             width: 100%;
         }
+        
+        .nav-link:hover {
+            transform: none !important;
+        }
+
+        .chatbot-bubble {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        .chatbot-icon {
+            width: 60px;
+            height: 60px;
+            background-color: #4e73df;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        .chatbot-icon:hover {
+            background-color: #3a57c5;
+            transform: scale(1.05);
+        }
+        .chatbot-icon i {
+            color: white;
+            font-size: 24px;
+        }
+        .chatbot-window {
+            position: absolute;
+            bottom: 70px;
+            right: 0;
+            width: 350px;
+            height: 450px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .chatbot-header {
+            background-color: #4e73df;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chatbot-header h5 {
+            margin: 0;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+        .chatbot-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+        }
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+        }
+        .user-message {
+            justify-content: flex-end;
+        }
+        .bot-message {
+            justify-content: flex-start;
+        }
+        .message-content {
+            padding: 10px 15px;
+            border-radius: 20px;
+            max-width: 80%;
+        }
+        .user-message .message-content {
+            background-color: #4e73df;
+            color: white;
+        }
+        .bot-message .message-content {
+            background-color: #f1f3f9;
+            color: #333;
+        }
+        .chatbot-input {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #e3e6f0;
+        }
+        .chatbot-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #d1d3e2;
+            border-radius: 20px;
+            margin-right: 10px;
+        }
+        .chatbot-input button {
+            background-color: #4e73df;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+        }
+        .chatbot-input button:hover {
+            background-color: #3a57c5;
+        }
     </style>
 </head>
 <body>
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
         <div class="container">
-            <a class="navbar-brand animate__animated animate__fadeIn" href="{% url 'home' %}">
+            <a class="navbar-brand animate__animated animate__fadeIn" href="{% url 'food_donation:home' %}">
                 <i class="fas fa-seedling me-2"></i>Beyond Hunger
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -340,42 +446,57 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'home' %}">Home</a>
+                        <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="{% url 'food_donation:home' %}">
+                            <i class="fas fa-home me-1"></i>Home
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'donate' %}">Donate Food</a>
+                        <a class="nav-link {% if request.path == '/donate/' %}active{% endif %}" href="{% url 'food_donation:donate' %}">
+                            <i class="fas fa-utensils me-1"></i>Donate Food
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'money_donate' %}">Donate Money</a>
+                        <a class="nav-link {% if request.path == '/money-donate/' %}active{% endif %}" href="{% url 'food_donation:money_donate' %}">
+                            <i class="fas fa-donate me-1"></i>Donate Money
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'about' %}">About</a>
+                        <a class="nav-link {% if request.path == '/about/' %}active{% endif %}" href="{% url 'food_donation:about' %}">
+                            <i class="fas fa-info-circle me-1"></i>About
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'contact' %}">Contact</a>
+                        <a class="nav-link {% if '/marketplace/' in request.path %}active{% endif %}" href="{% url 'food_donation:marketplace' %}">
+                            <i class="fas fa-store me-1"></i>Marketplace
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/contact/' %}active{% endif %}" href="{% url 'food_donation:contact' %}">
+                            <i class="fas fa-envelope me-1"></i>Contact
+                        </a>
                     </li>
                 </ul>
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
                         {% if user.is_superuser %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'admin_dashboard' %}">
+                            <a class="nav-link" href="{% url 'food_donation:admin_dashboard' %}">
                                 <i class="fas fa-cogs me-1"></i>Admin Dashboard
                             </a>
                         </li>
                         {% endif %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'profile' %}">Profile</a>
+                            <a class="nav-link" href="{% url 'food_donation:profile' %}">Profile</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+                            <a class="nav-link" href="{% url 'food_donation:logout' %}">Logout</a>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'login' %}">Login</a>
+                            <a class="nav-link" href="{% url 'food_donation:login' %}">Login</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'register' %}">Register</a>
+                            <a class="nav-link" href="{% url 'food_donation:register' %}">Register</a>
                         </li>
                     {% endif %}
                 </ul>
@@ -402,37 +523,43 @@
     </main>
 
     <!-- Footer -->
-    <footer class="footer">
+    <footer class="py-4 bg-light mt-auto">
         <div class="container">
-            <div class="row">
-                <div class="col-md-4">
-                    <h5>About Us</h5>
-                    <p>Beyond Hunger is dedicated to reducing food waste and helping those in need by connecting food donors with people and organizations that need food assistance.</p>
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center small">
+                <div>
+                    <span>&copy; 2025 Beyond Hunger. All rights reserved.</span>
                 </div>
-                <div class="col-md-4">
-                    <h5>Quick Links</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="{% url 'home' %}" class="text-white text-decoration-none">Home</a></li>
-                        <li><a href="{% url 'donate' %}" class="text-white text-decoration-none">Donate Food</a></li>
-                        <li><a href="{% url 'money_donate' %}" class="text-white text-decoration-none">Donate Money</a></li>
-                        <li><a href="{% url 'contact' %}" class="text-white text-decoration-none">Contact Us</a></li>
-                    </ul>
+                <div>
+                    <a href="{% url 'food_donation:about' %}" class="text-decoration-none">About</a> &middot;
+                    <a href="{% url 'food_donation:contact' %}" class="text-decoration-none">Contact</a>
                 </div>
-                <div class="col-md-4">
-                    <h5>Contact Info</h5>
-                    <ul class="list-unstyled">
-                        <li><i class="fas fa-phone"></i> +1 (555) 123-4567</li>
-                        <li><i class="fas fa-envelope"></i> info@beyondhunger.org</li>
-                        <li><i class="fas fa-map-marker-alt"></i> 123 Main St, City, State 12345</li>
-                    </ul>
-                </div>
-            </div>
-            <hr class="mt-4">
-            <div class="text-center">
-                <p>&copy; {% now "Y" %} Beyond Hunger. All rights reserved.</p>
             </div>
         </div>
     </footer>
+
+    <!-- Chatbot bubble -->
+    <div class="chatbot-bubble">
+        <div class="chatbot-icon" id="chatbot-toggle">
+            <i class="fas fa-comments"></i>
+        </div>
+        <div class="chatbot-window" id="chatbot-window">
+            <div class="chatbot-header">
+                <h5>Beyond Hunger Assistant</h5>
+                <button class="close-btn" id="chatbot-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="chatbot-messages" id="chatbot-messages">
+                <div class="message bot-message">
+                    <div class="message-content">
+                        Hello! How can I help you today?
+                    </div>
+                </div>
+            </div>
+            <div class="chatbot-input">
+                <input type="text" id="user-message" placeholder="Type your message...">
+                <button id="send-message"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -465,6 +592,90 @@
                     radioInput.checked = true;
                 }
             });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatbotToggle = document.getElementById('chatbot-toggle');
+            const chatbotWindow = document.getElementById('chatbot-window');
+            const chatbotClose = document.getElementById('chatbot-close');
+            const chatbotMessages = document.getElementById('chatbot-messages');
+            const userMessageInput = document.getElementById('user-message');
+            const sendMessageBtn = document.getElementById('send-message');
+
+            // Toggle chatbot window
+            chatbotToggle.addEventListener('click', function() {
+                chatbotWindow.style.display = 'flex';
+            });
+
+            // Close chatbot window
+            chatbotClose.addEventListener('click', function() {
+                chatbotWindow.style.display = 'none';
+            });
+
+            // Send message function
+            function sendMessage() {
+                const userMessage = userMessageInput.value.trim();
+                if (userMessage) {
+                    // Add user message to chat
+                    addMessage(userMessage, 'user');
+                    userMessageInput.value = '';
+
+                    // Simulate bot response after a short delay
+                    setTimeout(() => {
+                        const botResponse = getBotResponse(userMessage);
+                        addMessage(botResponse, 'bot');
+                    }, 600);
+                }
+            }
+
+            // Handle send button click
+            sendMessageBtn.addEventListener('click', sendMessage);
+
+            // Handle Enter key press
+            userMessageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            // Add message to the chat
+            function addMessage(message, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}-message`;
+                
+                const messageContent = document.createElement('div');
+                messageContent.className = 'message-content';
+                messageContent.textContent = message;
+                
+                messageDiv.appendChild(messageContent);
+                chatbotMessages.appendChild(messageDiv);
+                
+                // Scroll to bottom
+                chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+            }
+
+            // Simple bot response logic
+            function getBotResponse(userMessage) {
+                const lowerMessage = userMessage.toLowerCase();
+                
+                if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
+                    return "Hello! How can I help you with Beyond Hunger today?";
+                } else if (lowerMessage.includes('donate') || lowerMessage.includes('donation')) {
+                    return "You can donate food by going to the 'Donate Food' page or donate money through our 'Donate Money' page. Would you like me to direct you there?";
+                } else if (lowerMessage.includes('volunteer')) {
+                    return "We're always looking for volunteers! Please register on our site and indicate your interest in volunteering.";
+                } else if (lowerMessage.includes('food') || lowerMessage.includes('hungry')) {
+                    return "If you're in need of food, our marketplace has options available. Some items are free for those in need.";
+                } else if (lowerMessage.includes('marketplace') || lowerMessage.includes('listing')) {
+                    return "Our marketplace allows users to share excess food. You can browse available items or create your own listing if you're approved as a marketplace lister.";
+                } else if (lowerMessage.includes('contact') || lowerMessage.includes('help')) {
+                    return "You can reach our team through the Contact page. We're here to help!";
+                } else if (lowerMessage.includes('thanks') || lowerMessage.includes('thank you')) {
+                    return "You're welcome! Is there anything else I can help you with?";
+                } else {
+                    return "I'm not sure I understand. Can you please try rephrasing your question? You can also visit our FAQ or Contact pages for more information.";
+                }
+            }
         });
     </script>
 </body>

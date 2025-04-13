@@ -1,1 +1,1 @@
-web: gunicorn beyond_hunger.wsgi --log-file - 
+web: gunicorn beyond_hunger.wsgi --log-file - --workers 3 

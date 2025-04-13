@@ -1,0 +1,244 @@
+{% extends 'food_donation/base.html' %}
+{% load static %}
+
+{% block title %}Marketplace - Beyond Hunger{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-store me-2"></i>Community Marketplace</h1>
+        {% if user.is_authenticated %}
+        <div>
+            {% if not is_lister %}
+            <a href="{% url 'food_donation:apply_marketplace_lister' %}" class="btn btn-primary"><i class="fas fa-user-check me-2"></i>Become a Lister</a>
+            {% elif lister_status == 'approved' %}
+            <a href="{% url 'food_donation:create_marketplace_item' %}" class="btn btn-primary"><i class="fas fa-plus me-2"></i>Create Listing</a>
+            <a href="{% url 'food_donation:my_marketplace_items' %}" class="btn btn-outline-primary"><i class="fas fa-list me-2"></i>My Listings</a>
+            {% elif lister_status == 'pending' %}
+            <a href="{% url 'food_donation:marketplace_lister_status' %}" class="btn btn-outline-primary"><i class="fas fa-hourglass-half me-2"></i>View Application Status</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    
+    {% if user.is_authenticated %}
+    {% if not is_lister %}
+    <div class="alert alert-info mb-4">
+        <div class="d-flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-info-circle fa-2x me-3 mt-1"></i>
+            </div>
+            <div>
+                <h5>Want to list items in our marketplace?</h5>
+                <p class="mb-2">To ensure quality and protect our community, we require verification before you can list items. This helps prevent scams and ensures a safe experience for everyone.</p>
+                <a href="{% url 'food_donation:apply_marketplace_lister' %}" class="btn btn-primary btn-sm">Apply to Become a Lister</a>
+            </div>
+        </div>
+    </div>
+    {% elif lister_status == 'pending' %}
+    <div class="alert alert-warning mb-4">
+        <div class="d-flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-hourglass-half fa-2x me-3 mt-1"></i>
+            </div>
+            <div>
+                <h5>Your marketplace lister application is pending</h5>
+                <p class="mb-2">We're reviewing your application. Once approved, you'll be able to create marketplace listings.</p>
+                <a href="{% url 'food_donation:marketplace_lister_status' %}" class="btn btn-primary btn-sm">Check Status</a>
+            </div>
+        </div>
+    </div>
+    {% elif lister_status == 'rejected' %}
+    <div class="alert alert-danger mb-4">
+        <div class="d-flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-exclamation-circle fa-2x me-3 mt-1"></i>
+            </div>
+            <div>
+                <h5>Your marketplace lister application was not approved</h5>
+                <p class="mb-2">Please contact us for more information.</p>
+                <a href="{% url 'food_donation:marketplace_lister_status' %}" class="btn btn-primary btn-sm">View Details</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+    
+    <div class="row">
+        <div class="col-lg-3">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filters</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" action="{% url 'food_donation:marketplace' %}">
+                        <div class="mb-3">
+                            <label for="category" class="form-label">Category</label>
+                            <select name="category" id="category" class="form-select">
+                                <option value="">All Categories</option>
+                                {% for key, name in categories.items %}
+                                <option value="{{ key }}" {% if selected_category == key %}selected{% endif %}>{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="search" class="form-label">Search</label>
+                            <input type="text" name="search" id="search" class="form-control" placeholder="Search items..." value="{{ search_query }}">
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="free" name="free" {% if show_free %}checked{% endif %}>
+                            <label class="form-check-label" for="free">Show only free items</label>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-search me-2"></i>Apply Filters</button>
+                            {% if selected_category or search_query or show_free %}
+                            <a href="{% url 'food_donation:marketplace' %}" class="btn btn-outline-secondary mt-2"><i class="fas fa-redo me-2"></i>Clear Filters</a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>About</h5>
+                </div>
+                <div class="card-body">
+                    <p>The Community Marketplace allows you to:</p>
+                    <ul>
+                        <li>Find free or low-cost food items</li>
+                        <li>Share excess food with others</li>
+                        <li>Reduce food waste in our community</li>
+                        <li>Connect with local food providers</li>
+                    </ul>
+                    <div class="alert alert-info">
+                        <i class="fas fa-lightbulb me-2"></i>All transactions happen directly between users. Please arrange safe meetups and check food quality.
+                    </div>
+                    {% if not user.is_authenticated %}
+                    <div class="mt-3 d-grid gap-2">
+                        <a href="{% url 'food_donation:login' %}" class="btn btn-primary">Login to Participate</a>
+                        <a href="{% url 'food_donation:register' %}" class="btn btn-outline-primary">Register Now</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-9">
+            <!-- Results summary -->
+            <div class="alert alert-light mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>Found <strong>{{ total_items }}</strong> available item(s)</span>
+                </div>
+            </div>
+            
+            {% if page_obj %}
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                    {% for item in page_obj %}
+                    <div class="col">
+                        <div class="card h-100 marketplace-item">
+                            <div class="position-relative">
+                                {% if item.image %}
+                                <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.title }}" style="height: 180px; object-fit: cover;">
+                                {% else %}
+                                <div class="bg-light card-img-top d-flex align-items-center justify-content-center" style="height: 180px;">
+                                    <i class="fas fa-shopping-basket fa-3x text-muted"></i>
+                                </div>
+                                {% endif %}
+                                {% if item.is_free %}
+                                <span class="badge bg-success position-absolute top-0 end-0 m-2">FREE</span>
+                                {% endif %}
+                                <span class="badge bg-primary position-absolute top-0 start-0 m-2">{{ item.get_category_display }}</span>
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title">{{ item.title }}</h5>
+                                <p class="card-text small text-muted mb-2">
+                                    <i class="fas fa-map-marker-alt me-1"></i> {{ item.location }}
+                                </p>
+                                <p class="card-text">{{ item.description|truncatechars:100 }}</p>
+                            </div>
+                            <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+                                <div>
+                                    {% if item.is_free %}
+                                    <span class="text-success fw-bold">Free</span>
+                                    {% else %}
+                                    <span class="fw-bold">₹{{ item.price|default:"Price not specified" }}</span>
+                                    {% endif %}
+                                </div>
+                                <a href="{% url 'food_donation:marketplace_item_detail' item.pk %}" class="btn btn-sm btn-outline-primary">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                <nav aria-label="Marketplace navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if show_free %}&free=on{% endif %}">Previous</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">Previous</span>
+                        </li>
+                        {% endif %}
+                        
+                        {% for i in page_obj.paginator.page_range %}
+                            {% if page_obj.number == i %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ i }}</span>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ i }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if show_free %}&free=on{% endif %}">{{ i }}</a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if show_free %}&free=on{% endif %}">Next</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">Next</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                
+            {% else %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <h4>No items found</h4>
+                    <p class="text-muted">Try adjusting your filters or search terms</p>
+                    <a href="{% url 'food_donation:marketplace' %}" class="btn btn-outline-primary">See all listings</a>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'food_donation:create_marketplace_item' %}" class="btn btn-primary">Add a listing</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .marketplace-item {
+        transition: all 0.2s ease;
+        border: 0;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+    }
+    .marketplace-item:hover {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %} 

@@ -1,0 +1,215 @@
+{% extends 'food_donation/base.html' %}
+{% load static %}
+
+{% block title %}Add New Marketplace Listing - Beyond Hunger{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'food_donation:home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'food_donation:marketplace' %}">Marketplace</a></li>
+            <li class="breadcrumb-item active">Add New Listing</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Add New Marketplace Listing</h2>
+                </div>
+                <div class="card-body">
+                    <p class="lead mb-4">Share your excess food with the community by creating a marketplace listing. Free items are encouraged!</p>
+                    
+                    <form method="post" action="{% url 'food_donation:create_marketplace_item' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="title" name="title" required placeholder="e.g., Fresh Organic Apples, Homemade Bread">
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="category" class="form-label">Category</label>
+                                <select class="form-select" id="category" name="category" required>
+                                    {% for category_value, category_name in categories %}
+                                    <option value="{{ category_value }}">{{ category_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="quantity" class="form-label">Quantity</label>
+                                <input type="text" class="form-control" id="quantity" name="quantity" required placeholder="e.g., 2 kg, 3 loaves, 5 boxes">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" required placeholder="Describe your item. Include details about quality, packaging, etc."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="location" class="form-label">Location</label>
+                            <div class="input-group mb-2">
+                                <input type="text" class="form-control" id="location" name="location" required placeholder="Where can people pick up this item?">
+                                <button type="button" class="btn btn-outline-secondary" id="get-location">
+                                    <i class="fas fa-map-marker-alt"></i> Use My Location
+                                </button>
+                            </div>
+                            <div id="location-status" class="form-text"></div>
+                            <div class="form-text">Provide a general area rather than your exact address for safety.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="expiry_date" class="form-label">Expiry Date (if applicable)</label>
+                            <input type="date" class="form-control" id="expiry_date" name="expiry_date" min="{{ current_date }}">
+                            <div class="form-text">When will this food expire? Leave blank if not applicable.</div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="is_free" name="is_free" checked>
+                            <label class="form-check-label" for="is_free">This item is free</label>
+                        </div>
+                        
+                        <div class="mb-3 price-field" style="display: none;">
+                            <label for="price" class="form-label">Price (₹)</label>
+                            <input type="number" step="0.01" min="0" class="form-control" id="price" name="price" placeholder="Enter price in ₹">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="main_image" class="form-label">Main Image</label>
+                            <input type="file" class="form-control" id="main_image" name="main_image" accept="image/*">
+                            <div class="form-text">This will be the primary image displayed for your listing.</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="additional_images" class="form-label">Additional Images (Optional)</label>
+                            <input type="file" class="form-control" id="additional_images" name="additional_images" accept="image/*" multiple>
+                            <div class="form-text">You can select multiple images to provide more details about your food item.</div>
+                        </div>
+                        
+                        <div class="alert alert-info mb-4">
+                            <i class="fas fa-info-circle me-2"></i>By creating a listing, you agree to our community guidelines. Please be truthful about food quality and respond promptly to interested parties.
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'food_donation:marketplace' %}" class="btn btn-outline-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus-circle me-2"></i>Add Listing
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const isFreeCheckbox = document.getElementById('is_free');
+    const priceField = document.querySelector('.price-field');
+    
+    function updatePriceField() {
+        if (isFreeCheckbox.checked) {
+            priceField.style.display = 'none';
+            document.getElementById('price').value = '';
+        } else {
+            priceField.style.display = 'block';
+        }
+    }
+    
+    isFreeCheckbox.addEventListener('change', updatePriceField);
+    updatePriceField(); // Initialize on page load
+    
+    // Location auto-filling
+    const locationButton = document.getElementById('get-location');
+    const locationField = document.getElementById('location');
+    const statusDiv = document.getElementById('location-status');
+    
+    // Location button handler
+    locationButton.addEventListener('click', function() {
+        if (!navigator.geolocation) {
+            statusDiv.textContent = 'Geolocation is not supported by your browser';
+            return;
+        }
+        
+        statusDiv.textContent = 'Locating you...';
+        locationButton.disabled = true;
+        
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            
+            // Use reverse geocoding to get address
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`)
+                .then(response => response.json())
+                .then(data => {
+                    // Extract just the neighborhood or city for general location
+                    let generalLocation = '';
+                    if (data.address) {
+                        // Try to use just neighborhood, suburb, or city for privacy
+                        if (data.address.neighbourhood) {
+                            generalLocation = data.address.neighbourhood;
+                        } else if (data.address.suburb) {
+                            generalLocation = data.address.suburb;
+                        } else if (data.address.city) {
+                            generalLocation = data.address.city;
+                        } else if (data.address.town) {
+                            generalLocation = data.address.town;
+                        } else {
+                            // Fallback to a less specific part of the address
+                            generalLocation = data.display_name.split(',').slice(0, 2).join(', ');
+                        }
+                    } else {
+                        // If no address structure, just use the first part of display name
+                        generalLocation = data.display_name.split(',')[0];
+                    }
+                    
+                    // Update the location field
+                    if (locationField.value) {
+                        // If there's already a location, ask if they want to replace it
+                        if (confirm('Replace your existing location with your current location?')) {
+                            locationField.value = generalLocation;
+                        }
+                    } else {
+                        locationField.value = generalLocation;
+                    }
+                    
+                    statusDiv.textContent = 'Location found! General area updated.';
+                    statusDiv.classList.add('text-success');
+                    setTimeout(() => {
+                        statusDiv.textContent = '';
+                        statusDiv.classList.remove('text-success');
+                    }, 3000);
+                })
+                .catch(error => {
+                    statusDiv.textContent = 'Could not fetch location';
+                    console.error('Error fetching location:', error);
+                })
+                .finally(() => {
+                    locationButton.disabled = false;
+                });
+        }, function(error) {
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    statusDiv.textContent = 'You denied the location permission';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    statusDiv.textContent = 'Location information is unavailable';
+                    break;
+                case error.TIMEOUT:
+                    statusDiv.textContent = 'The request to get your location timed out';
+                    break;
+                default:
+                    statusDiv.textContent = 'An unknown error occurred';
+                    break;
+            }
+            locationButton.disabled = false;
+        });
+    });
+});
+</script>
+{% endblock %} 

@@ -9,10 +9,10 @@
         <h1 class="display-4 mb-4 fw-bold">Welcome to Beyond Hunger</h1>
         <p class="lead mb-4">Connecting food donors with those in need to reduce waste and fight hunger.</p>
         <div class="mt-5">
-            <a href="{% url 'donate' %}" class="btn btn-light btn-lg me-3 animate__animated animate__pulse animate__infinite animate__slow">
+            <a href="{% url 'food_donation:donate' %}" class="btn btn-light btn-lg me-3 animate__animated animate__pulse animate__infinite animate__slow">
                 <i class="fas fa-hand-holding-heart me-2"></i>Donate Food
             </a>
-            <a href="{% url 'money_donate' %}" class="btn btn-outline-light btn-lg">
+            <a href="{% url 'food_donation:money_donate' %}" class="btn btn-outline-light btn-lg">
                 <i class="fas fa-rupee-sign me-2"></i>Donate Money
             </a>
         </div>
@@ -75,7 +75,7 @@
             {% empty %}
             <div class="col-12 text-center animate-on-scroll">
                 <p class="text-muted">No recent donations to display. Be the first to donate!</p>
-                <a href="{% url 'donate' %}" class="btn btn-primary mt-3">
+                <a href="{% url 'food_donation:donate' %}" class="btn btn-primary mt-3">
                     <i class="fas fa-plus-circle me-2"></i>Make a Donation
                 </a>
             </div>

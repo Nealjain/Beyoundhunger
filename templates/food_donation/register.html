@@ -51,7 +51,13 @@
                             
                             <div class="mb-3">
                                 <label for="address" class="form-label">Address</label>
-                                <textarea class="form-control" id="address" name="address" rows="3" required></textarea>
+                                <div class="input-group mb-2">
+                                    <textarea class="form-control" id="address" name="address" rows="3" required></textarea>
+                                    <button type="button" class="btn btn-outline-secondary" id="get-location">
+                                        <i class="fas fa-map-marker-alt"></i> Use My Location
+                                    </button>
+                                </div>
+                                <div id="location-status" class="form-text"></div>
                             </div>
                             
                             <div class="mb-3">
@@ -114,7 +120,7 @@
                 </form>
                 
                 <div class="mt-4 text-center">
-                    <p>Already have an account? <a href="{% url 'login' %}" class="text-primary">Login here</a></p>
+                    <p>Already have an account? <a href="{% url 'food_donation:login' %}" class="text-primary">Login here</a></p>
                 </div>
             </div>
         </div>
@@ -139,6 +145,75 @@
         
         // Add event listener
         volunteerCheckbox.addEventListener('change', toggleVolunteerSection);
+        
+        // Location auto-filling
+        const locationButton = document.getElementById('get-location');
+        const addressField = document.getElementById('address');
+        const statusDiv = document.getElementById('location-status');
+        
+        // Location button handler
+        locationButton.addEventListener('click', function() {
+            if (!navigator.geolocation) {
+                statusDiv.textContent = 'Geolocation is not supported by your browser';
+                return;
+            }
+            
+            statusDiv.textContent = 'Locating you...';
+            locationButton.disabled = true;
+            
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const latitude = position.coords.latitude;
+                const longitude = position.coords.longitude;
+                
+                // Use reverse geocoding to get address
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Build address from components
+                        const address = data.display_name;
+                        
+                        // Update the address field
+                        if (addressField.value) {
+                            // If there's already an address, ask if they want to replace it
+                            if (confirm('Replace your existing address with your current location?')) {
+                                addressField.value = address;
+                            }
+                        } else {
+                            addressField.value = address;
+                        }
+                        
+                        statusDiv.textContent = 'Location found! Address updated.';
+                        statusDiv.classList.add('text-success');
+                        setTimeout(() => {
+                            statusDiv.textContent = '';
+                            statusDiv.classList.remove('text-success');
+                        }, 3000);
+                    })
+                    .catch(error => {
+                        statusDiv.textContent = 'Could not fetch address from your location';
+                        console.error('Error fetching address:', error);
+                    })
+                    .finally(() => {
+                        locationButton.disabled = false;
+                    });
+            }, function(error) {
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        statusDiv.textContent = 'You denied the location permission';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        statusDiv.textContent = 'Location information is unavailable';
+                        break;
+                    case error.TIMEOUT:
+                        statusDiv.textContent = 'The request to get your location timed out';
+                        break;
+                    default:
+                        statusDiv.textContent = 'An unknown error occurred';
+                        break;
+                }
+                locationButton.disabled = false;
+            });
+        });
     });
 </script>
 {% endblock %} 

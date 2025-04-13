@@ -1,0 +1,142 @@
+{% extends 'food_donation/base.html' %}
+{% load static %}
+
+{% block title %}Edit Listing - Beyond Hunger{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'food_donation:home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'food_donation:marketplace' %}">Marketplace</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'food_donation:my_marketplace_items' %}">My Listings</a></li>
+            <li class="breadcrumb-item active">Edit Listing</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0"><i class="fas fa-edit me-2"></i>Edit Marketplace Listing</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'food_donation:edit_marketplace_item' item.id %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title *</label>
+                            <input type="text" class="form-control" id="title" name="title" value="{{ item.title }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description *</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" required>{{ item.description }}</textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="category" class="form-label">Category *</label>
+                                <select class="form-select" id="category" name="category" required>
+                                    {% for category_value, category_name in categories %}
+                                    <option value="{{ category_value }}" {% if item.category == category_value %}selected{% endif %}>{{ category_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="quantity" class="form-label">Quantity *</label>
+                                <input type="text" class="form-control" id="quantity" name="quantity" value="{{ item.quantity }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="location" class="form-label">Location *</label>
+                            <input type="text" class="form-control" id="location" name="location" value="{{ item.location }}" required>
+                            <div class="form-text">General area where the item is available</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="expiry_date" class="form-label">Expiry Date (if applicable)</label>
+                            <input type="date" class="form-control" id="expiry_date" name="expiry_date" value="{{ item.expiry_date|date:'Y-m-d' }}" min="{{ current_date }}">
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="is_free" name="is_free" {% if item.is_free %}checked{% endif %}>
+                            <label class="form-check-label" for="is_free">This item is free</label>
+                        </div>
+                        
+                        <div class="mb-3" id="price_field" {% if item.is_free %}style="display:none;"{% endif %}>
+                            <label for="price" class="form-label">Price (₹)</label>
+                            <input type="number" class="form-control" id="price" name="price" step="0.01" min="0" value="{{ item.price|default:'' }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="main_image" class="form-label">Main Image</label>
+                            {% if item.image %}
+                                <div class="mb-2">
+                                    <img src="{{ item.image.url }}" alt="{{ item.title }}" class="img-thumbnail" style="max-height: 200px;">
+                                    <p class="small text-muted">Current main image. Upload a new one to replace it.</p>
+                                </div>
+                            {% endif %}
+                            <input type="file" class="form-control" id="main_image" name="main_image" accept="image/*">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="additional_images" class="form-label">Additional Images</label>
+                            <input type="file" class="form-control" id="additional_images" name="additional_images" accept="image/*" multiple>
+                            <div class="form-text">You can select multiple images to provide more details about your food item.</div>
+                        </div>
+                        
+                        {% if additional_images %}
+                        <div class="mb-3">
+                            <label class="form-label">Current Additional Images</label>
+                            <div class="row">
+                                {% for img in additional_images %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card">
+                                        <img src="{{ img.image.url }}" class="card-img-top" alt="Additional image">
+                                        <div class="card-body text-center">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="delete_images" value="{{ img.id }}" id="delete_img_{{ img.id }}">
+                                                <label class="form-check-label" for="delete_img_{{ img.id }}">
+                                                    Delete this image
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'food_donation:marketplace_item_detail' item.id %}" class="btn btn-outline-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Update Listing
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const isFreeCheckbox = document.getElementById('is_free');
+    const priceField = document.getElementById('price_field');
+    
+    isFreeCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            priceField.style.display = 'none';
+            document.getElementById('price').value = '';
+        } else {
+            priceField.style.display = 'block';
+        }
+    });
+});
+</script>
+{% endblock %} 

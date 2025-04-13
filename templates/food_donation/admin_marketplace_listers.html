@@ -1,0 +1,190 @@
+{% extends 'food_donation/base.html' %}
+{% load static %}
+
+{% block title %}Admin - Marketplace Listers{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'food_donation:home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'food_donation:admin_dashboard' %}">Admin Dashboard</a></li>
+            <li class="breadcrumb-item active">Marketplace Listers</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h2 class="mb-0"><i class="fas fa-user-shield me-2"></i>Marketplace Lister Management</h2>
+        </div>
+        <div class="card-body">
+            <!-- Status filters -->
+            <div class="mb-4">
+                <h5>Filter by Status</h5>
+                <div class="btn-group" role="group">
+                    <a href="{% url 'food_donation:admin_marketplace_listers' %}" class="btn btn-outline-primary {% if not current_status %}active{% endif %}">All</a>
+                    {% for status_value, status_name in status_choices %}
+                    <a href="{% url 'food_donation:admin_marketplace_listers' %}?status={{ status_value }}" class="btn btn-outline-primary {% if current_status == status_value %}active{% endif %}">
+                        {{ status_name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Lister table -->
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Business Name</th>
+                            <th>Contact</th>
+                            <th>Applied On</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lister in listers %}
+                        <tr>
+                            <td>
+                                <strong>{{ lister.user.username }}</strong><br>
+                                <small>{{ lister.user.email }}</small>
+                            </td>
+                            <td>{{ lister.business_name|default:"Individual" }}</td>
+                            <td>
+                                {{ lister.contact_phone }}<br>
+                                <small class="text-muted">{{ lister.address|truncatechars:30 }}</small>
+                            </td>
+                            <td>{{ lister.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                {% if lister.status == 'pending' %}
+                                <span class="badge bg-warning">Pending</span>
+                                {% elif lister.status == 'approved' %}
+                                <span class="badge bg-success">Approved</span>
+                                <br><small>{{ lister.approved_at|date:"M d, Y" }}</small>
+                                {% elif lister.status == 'rejected' %}
+                                <span class="badge bg-danger">Rejected</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#viewModal{{ lister.id }}">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                                
+                                {% if lister.status == 'pending' %}
+                                <div class="btn-group mt-2">
+                                    <form method="post" action="{% url 'food_donation:update_marketplace_lister_status' lister.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="status" value="approved">
+                                        <button type="submit" class="btn btn-sm btn-success me-1">
+                                            <i class="fas fa-check"></i> Approve
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{% url 'food_donation:update_marketplace_lister_status' lister.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="status" value="rejected">
+                                        <button type="submit" class="btn btn-sm btn-danger">
+                                            <i class="fas fa-times"></i> Reject
+                                        </button>
+                                    </form>
+                                </div>
+                                {% elif lister.status != 'pending' %}
+                                <form method="post" action="{% url 'food_donation:update_marketplace_lister_status' lister.id %}" class="mt-2">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="status" value="pending">
+                                    <button type="submit" class="btn btn-sm btn-secondary">
+                                        <i class="fas fa-undo"></i> Reset to Pending
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        <!-- Modal for detailed view -->
+                        <div class="modal fade" id="viewModal{{ lister.id }}" tabindex="-1">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Application Details: {{ lister.user.username }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6>User Information</h6>
+                                                <p><strong>Name:</strong> {{ lister.user.get_full_name|default:"Not provided" }}</p>
+                                                <p><strong>Username:</strong> {{ lister.user.username }}</p>
+                                                <p><strong>Email:</strong> {{ lister.user.email }}</p>
+                                                <p><strong>Date Joined:</strong> {{ lister.user.date_joined|date:"F d, Y" }}</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6>Lister Details</h6>
+                                                <p><strong>Business Name:</strong> {{ lister.business_name|default:"Not provided" }}</p>
+                                                <p><strong>Contact Phone:</strong> {{ lister.contact_phone }}</p>
+                                                <p><strong>Application Date:</strong> {{ lister.created_at|date:"F d, Y" }}</p>
+                                                <p><strong>Status:</strong> {{ lister.get_status_display }}</p>
+                                                {% if lister.approved_at %}
+                                                <p><strong>Approved On:</strong> {{ lister.approved_at|date:"F d, Y" }}</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <hr>
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <h6>Address</h6>
+                                                <p>{{ lister.address|linebreaks }}</p>
+                                            </div>
+                                        </div>
+                                        <hr>
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <h6>ID Verification</h6>
+                                                <div class="card">
+                                                    <div class="card-body bg-light">
+                                                        <p class="mb-0"><strong>ID Number:</strong> {{ lister.id_verification }}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        {% if lister.status == 'pending' %}
+                                        <form method="post" action="{% url 'food_donation:update_marketplace_lister_status' lister.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="status" value="approved">
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fas fa-check me-2"></i>Approve
+                                            </button>
+                                        </form>
+                                        <form method="post" action="{% url 'food_donation:update_marketplace_lister_status' lister.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="status" value="rejected">
+                                            <button type="submit" class="btn btn-danger">
+                                                <i class="fas fa-times me-2"></i>Reject
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                                <h5>No marketplace lister applications found.</h5>
+                                {% if current_status %}
+                                <a href="{% url 'food_donation:admin_marketplace_listers' %}" class="btn btn-outline-primary mt-2">View All Applications</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,173 @@
+{% extends 'food_donation/base.html' %}
+{% load static %}
+
+{% block title %}Become a Marketplace Lister - Beyond Hunger{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'food_donation:home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'food_donation:marketplace' %}">Marketplace</a></li>
+            <li class="breadcrumb-item active">Become a Lister</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0"><i class="fas fa-user-check me-2"></i>Become a Marketplace Lister</h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <h5><i class="fas fa-info-circle me-2"></i>Why verification?</h5>
+                        <p>To maintain the quality and trust of our marketplace, we require verification of all listers. This helps prevent scams and ensures a safe experience for everyone.</p>
+                    </div>
+                    
+                    <form method="post" action="{% url 'food_donation:apply_marketplace_lister' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="business_name" class="form-label">Business Name (if applicable)</label>
+                            <input type="text" class="form-control" id="business_name" name="business_name" placeholder="Leave blank if listing as an individual">
+                            <div class="form-text">If you're representing a business, organization, or community group, please provide its name.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_verification" class="form-label">ID Verification Number *</label>
+                            <input type="text" class="form-control" id="id_verification" name="id_verification" required placeholder="e.g., Driver's License, Passport, or National ID number">
+                            <div class="form-text">This information is used for verification purposes only and will not be displayed publicly.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_images" class="form-label">ID Verification Images *</label>
+                            <input type="file" class="form-control" id="id_images" name="id_images" accept="image/*" multiple required>
+                            <div class="form-text">Please upload photos of your ID for verification. You can upload multiple photos if needed.</div>
+                            <div class="alert alert-warning mt-2">
+                                <small><i class="fas fa-shield-alt me-2"></i>Your ID photos are encrypted and stored securely. They will only be used for verification purposes and will never be displayed publicly.</small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="contact_phone" class="form-label">Contact Phone *</label>
+                            <input type="tel" class="form-control" id="contact_phone" name="contact_phone" value="{{ initial_data.contact_phone }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Address *</label>
+                            <div class="input-group mb-2">
+                                <textarea class="form-control" id="address" name="address" rows="3" required>{{ initial_data.address }}</textarea>
+                                <button type="button" class="btn btn-outline-secondary" id="get-location">
+                                    <i class="fas fa-map-marker-alt"></i> Use My Location
+                                </button>
+                            </div>
+                            <div id="location-status" class="form-text"></div>
+                            <div class="form-text">Your full address will not be shared publicly. Only a general location will be visible.</div>
+                        </div>
+                        
+                        <div class="alert alert-warning mb-4">
+                            <h5><i class="fas fa-exclamation-triangle me-2"></i>Important Notice</h5>
+                            <p>By submitting this application, you agree to:</p>
+                            <ul>
+                                <li>Provide accurate and truthful information</li>
+                                <li>List only items that you legally own and have the right to sell or give away</li>
+                                <li>Accurately describe the condition and quality of all items</li>
+                                <li>Abide by our community guidelines and terms of service</li>
+                                <li>Respond promptly to inquiries about your listings</li>
+                            </ul>
+                            <p class="mb-0">Violations may result in suspension or termination of your marketplace privileges.</p>
+                        </div>
+                        
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="terms_agree" required>
+                            <label class="form-check-label" for="terms_agree">
+                                I agree to the terms and conditions for marketplace listers
+                            </label>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'food_donation:marketplace' %}" class="btn btn-outline-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-2"></i>Submit Application
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const locationButton = document.getElementById('get-location');
+    const addressField = document.getElementById('address');
+    const statusDiv = document.getElementById('location-status');
+    
+    // Location button handler
+    locationButton.addEventListener('click', function() {
+        if (!navigator.geolocation) {
+            statusDiv.textContent = 'Geolocation is not supported by your browser';
+            return;
+        }
+        
+        statusDiv.textContent = 'Locating you...';
+        locationButton.disabled = true;
+        
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            
+            // Use reverse geocoding to get address
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`)
+                .then(response => response.json())
+                .then(data => {
+                    // Build address from components
+                    const address = data.display_name;
+                    
+                    // Update the address field
+                    if (addressField.value) {
+                        // If there's already an address, ask if they want to replace it
+                        if (confirm('Replace your existing address with your current location?')) {
+                            addressField.value = address;
+                        }
+                    } else {
+                        addressField.value = address;
+                    }
+                    
+                    statusDiv.textContent = 'Location found! Address updated.';
+                    statusDiv.classList.add('text-success');
+                    setTimeout(() => {
+                        statusDiv.textContent = '';
+                        statusDiv.classList.remove('text-success');
+                    }, 3000);
+                })
+                .catch(error => {
+                    statusDiv.textContent = 'Could not fetch address from your location';
+                    console.error('Error fetching address:', error);
+                })
+                .finally(() => {
+                    locationButton.disabled = false;
+                });
+        }, function(error) {
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    statusDiv.textContent = 'You denied the location permission';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    statusDiv.textContent = 'Location information is unavailable';
+                    break;
+                case error.TIMEOUT:
+                    statusDiv.textContent = 'The request to get your location timed out';
+                    break;
+                default:
+                    statusDiv.textContent = 'An unknown error occurred';
+                    break;
+            }
+            locationButton.disabled = false;
+        });
+    });
+});
+</script>
+{% endblock %} 
