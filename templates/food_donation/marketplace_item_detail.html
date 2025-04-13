@@ -193,6 +193,14 @@
                             <i class="fas fa-check-circle text-success me-2"></i>Tell someone about your meetup
                         </li>
                     </ul>
+                    
+                    {% if user.is_authenticated and not is_owner %}
+                    <div class="mt-3">
+                        <button class="btn btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#reportModal">
+                            <i class="fas fa-flag me-2"></i>Report Listing
+                        </button>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
             
@@ -235,6 +243,48 @@
                 </form>
                 <div class="alert alert-info mt-3 small">
                     <i class="fas fa-info-circle me-2"></i>For now, this will send an email to the seller. In the future, we plan to add in-app messaging.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Listing Modal -->
+<div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-flag me-2"></i>Report Listing</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Please let us know why you're reporting this listing:</p>
+                <form method="post" action="{% url 'food_donation:report_marketplace_item' item.pk %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Reason for reporting</label>
+                        <select class="form-select" name="report_reason" required>
+                            <option value="" selected disabled>Select a reason</option>
+                            <option value="inappropriate">Inappropriate content</option>
+                            <option value="offensive">Offensive or harmful content</option>
+                            <option value="expired">Item expired but not marked as such</option>
+                            <option value="scam">Potential scam or fraud</option>
+                            <option value="other">Other reason</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="report_details" class="form-label">Additional details</label>
+                        <textarea class="form-control" id="report_details" name="report_details" rows="3" placeholder="Please provide any additional information about the issue..."></textarea>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-paper-plane me-2"></i>Submit Report
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+                <div class="alert alert-info mt-3 small">
+                    <i class="fas fa-info-circle me-2"></i>Thank you for helping keep our marketplace safe. We review all reports and take appropriate action.
                 </div>
             </div>
         </div>

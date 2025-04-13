@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from .models import (
     UserProfile, FoodDonation, Volunteer, DeliveryAssignment, 
     MarketplaceLister, MarketplaceItem, MarketplaceItemImage, 
-    FoodDonationImage, IDVerificationImage
+    FoodDonationImage, IDVerificationImage, MarketplaceReport
 )
 from django.utils import timezone
 from decimal import Decimal
@@ -709,3 +709,32 @@ def update_marketplace_lister_status(request, pk):
             messages.error(request, 'Invalid status.')
             
     return redirect('food_donation:admin_marketplace_listers')
+
+@login_required
+def report_marketplace_item(request, pk):
+    item = get_object_or_404(MarketplaceItem, pk=pk)
+    
+    # Prevent owners from reporting their own listings
+    if request.user == item.seller:
+        messages.error(request, "You cannot report your own listing.")
+        return redirect('food_donation:marketplace_item_detail', pk=pk)
+    
+    if request.method == 'POST':
+        report_reason = request.POST.get('report_reason')
+        report_details = request.POST.get('report_details', '')
+        
+        # Create a new model instance for the report
+        report = MarketplaceReport.objects.create(
+            reporter=request.user,
+            item=item,
+            reason=report_reason,
+            details=report_details
+        )
+        
+        # Optional: Send notification to admins about the new report
+        
+        messages.success(request, "Thank you for your report. Our team will review it shortly.")
+        return redirect('food_donation:marketplace_item_detail', pk=pk)
+    
+    # If not a POST request, redirect back to the item detail page
+    return redirect('food_donation:marketplace_item_detail', pk=pk)

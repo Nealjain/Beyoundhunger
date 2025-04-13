@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import api
+from . import views_debug
 
 app_name = 'food_donation'
 
@@ -30,7 +31,9 @@ urlpatterns = [
     path('marketplace/', views.marketplace, name='marketplace'),
     path('marketplace/apply/', views.apply_marketplace_lister, name='apply_marketplace_lister'),
     path('marketplace/lister-status/', views.marketplace_lister_status, name='marketplace_lister_status'),
-    path('marketplace/item/<int:pk>/', views.marketplace_item_detail, name='marketplace_item_detail'),
+    path('marketplace/<int:pk>/', views.marketplace_item_detail, name='marketplace_item_detail'),
+    path('marketplace/<int:pk>/report/', views.report_marketplace_item, name='report_marketplace_item'),
+    path('marketplace/apply-lister/', views.apply_marketplace_lister, name='apply_marketplace_lister'),
     path('marketplace/create/', views.create_marketplace_item, name='create_marketplace_item'),
     path('marketplace/item/<int:pk>/edit/', views.edit_marketplace_item, name='edit_marketplace_item'),
     path('marketplace/item/<int:pk>/delete/', views.delete_marketplace_item, name='delete_marketplace_item'),
@@ -49,4 +52,8 @@ urlpatterns = [
     path('api/volunteers/', api.list_volunteers, name='api_volunteers'),
     path('api/assign-delivery/', api.assign_delivery, name='api_assign_delivery'),
     path('api/users/', api.list_users, name='api_users'),
+
+    # Debug URLs - these will work without authentication
+    path('debug/', views_debug.debug_home, name='debug_home'),
+    path('debug-info/', views_debug.debug_info, name='debug_info'),
 ] 

@@ -5,10 +5,10 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1><i class="fas fa-store me-2"></i>Community Marketplace</h1>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+        <h1 class="mb-3 mb-md-0"><i class="fas fa-store me-2"></i>Community Marketplace</h1>
         {% if user.is_authenticated %}
-        <div>
+        <div class="d-flex flex-wrap gap-2">
             {% if not is_lister %}
             <a href="{% url 'food_donation:apply_marketplace_lister' %}" class="btn btn-primary"><i class="fas fa-user-check me-2"></i>Become a Lister</a>
             {% elif lister_status == 'approved' %}
@@ -24,9 +24,9 @@
     {% if user.is_authenticated %}
     {% if not is_lister %}
     <div class="alert alert-info mb-4">
-        <div class="d-flex">
-            <div class="flex-shrink-0">
-                <i class="fas fa-info-circle fa-2x me-3 mt-1"></i>
+        <div class="d-flex flex-column flex-md-row">
+            <div class="flex-shrink-0 text-center mb-3 mb-md-0">
+                <i class="fas fa-info-circle fa-2x me-md-3"></i>
             </div>
             <div>
                 <h5>Want to list items in our marketplace?</h5>
@@ -37,9 +37,9 @@
     </div>
     {% elif lister_status == 'pending' %}
     <div class="alert alert-warning mb-4">
-        <div class="d-flex">
-            <div class="flex-shrink-0">
-                <i class="fas fa-hourglass-half fa-2x me-3 mt-1"></i>
+        <div class="d-flex flex-column flex-md-row">
+            <div class="flex-shrink-0 text-center mb-3 mb-md-0">
+                <i class="fas fa-hourglass-half fa-2x me-md-3"></i>
             </div>
             <div>
                 <h5>Your marketplace lister application is pending</h5>
@@ -50,9 +50,9 @@
     </div>
     {% elif lister_status == 'rejected' %}
     <div class="alert alert-danger mb-4">
-        <div class="d-flex">
-            <div class="flex-shrink-0">
-                <i class="fas fa-exclamation-circle fa-2x me-3 mt-1"></i>
+        <div class="d-flex flex-column flex-md-row">
+            <div class="flex-shrink-0 text-center mb-3 mb-md-0">
+                <i class="fas fa-exclamation-circle fa-2x me-md-3"></i>
             </div>
             <div>
                 <h5>Your marketplace lister application was not approved</h5>
@@ -65,64 +65,73 @@
     {% endif %}
     
     <div class="row">
-        <div class="col-lg-3">
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filters</h5>
-                </div>
-                <div class="card-body">
-                    <form method="get" action="{% url 'food_donation:marketplace' %}">
-                        <div class="mb-3">
-                            <label for="category" class="form-label">Category</label>
-                            <select name="category" id="category" class="form-select">
-                                <option value="">All Categories</option>
-                                {% for key, name in categories.items %}
-                                <option value="{{ key }}" {% if selected_category == key %}selected{% endif %}>{{ name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="search" class="form-label">Search</label>
-                            <input type="text" name="search" id="search" class="form-control" placeholder="Search items..." value="{{ search_query }}">
-                        </div>
-                        
-                        <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="free" name="free" {% if show_free %}checked{% endif %}>
-                            <label class="form-check-label" for="free">Show only free items</label>
-                        </div>
-                        
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary"><i class="fas fa-search me-2"></i>Apply Filters</button>
-                            {% if selected_category or search_query or show_free %}
-                            <a href="{% url 'food_donation:marketplace' %}" class="btn btn-outline-secondary mt-2"><i class="fas fa-redo me-2"></i>Clear Filters</a>
-                            {% endif %}
-                        </div>
-                    </form>
-                </div>
+        <!-- Filters - Collapsible on mobile -->
+        <div class="col-lg-3 mb-4">
+            <div class="d-lg-none mb-3">
+                <button class="btn btn-primary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFilters" aria-expanded="false" aria-controls="collapseFilters">
+                    <i class="fas fa-filter me-2"></i>Show/Hide Filters
+                </button>
             </div>
             
-            <div class="card">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>About</h5>
+            <div class="collapse d-lg-block" id="collapseFilters">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filters</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="get" action="{% url 'food_donation:marketplace' %}">
+                            <div class="mb-3">
+                                <label for="category" class="form-label">Category</label>
+                                <select name="category" id="category" class="form-select">
+                                    <option value="">All Categories</option>
+                                    {% for key, name in categories.items %}
+                                    <option value="{{ key }}" {% if selected_category == key %}selected{% endif %}>{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="search" class="form-label">Search</label>
+                                <input type="text" name="search" id="search" class="form-control" placeholder="Search items..." value="{{ search_query }}">
+                            </div>
+                            
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="free" name="free" {% if show_free %}checked{% endif %}>
+                                <label class="form-check-label" for="free">Show only free items</label>
+                            </div>
+                            
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-search me-2"></i>Apply Filters</button>
+                                {% if selected_category or search_query or show_free %}
+                                <a href="{% url 'food_donation:marketplace' %}" class="btn btn-outline-secondary mt-2"><i class="fas fa-redo me-2"></i>Clear Filters</a>
+                                {% endif %}
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <p>The Community Marketplace allows you to:</p>
-                    <ul>
-                        <li>Find free or low-cost food items</li>
-                        <li>Share excess food with others</li>
-                        <li>Reduce food waste in our community</li>
-                        <li>Connect with local food providers</li>
-                    </ul>
-                    <div class="alert alert-info">
-                        <i class="fas fa-lightbulb me-2"></i>All transactions happen directly between users. Please arrange safe meetups and check food quality.
+                
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>About</h5>
                     </div>
-                    {% if not user.is_authenticated %}
-                    <div class="mt-3 d-grid gap-2">
-                        <a href="{% url 'food_donation:login' %}" class="btn btn-primary">Login to Participate</a>
-                        <a href="{% url 'food_donation:register' %}" class="btn btn-outline-primary">Register Now</a>
+                    <div class="card-body">
+                        <p>The Community Marketplace allows you to:</p>
+                        <ul>
+                            <li>Find free or low-cost food items</li>
+                            <li>Share excess food with others</li>
+                            <li>Reduce food waste in our community</li>
+                            <li>Connect with local food providers</li>
+                        </ul>
+                        <div class="alert alert-info">
+                            <i class="fas fa-lightbulb me-2"></i>All transactions happen directly between users. Please arrange safe meetups and check food quality.
+                        </div>
+                        {% if not user.is_authenticated %}
+                        <div class="mt-3 d-grid gap-2">
+                            <a href="{% url 'food_donation:login' %}" class="btn btn-primary">Login to Participate</a>
+                            <a href="{% url 'food_donation:register' %}" class="btn btn-outline-primary">Register Now</a>
+                        </div>
+                        {% endif %}
                     </div>
-                    {% endif %}
                 </div>
             </div>
         </div>

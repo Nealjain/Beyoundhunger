@@ -15,7 +15,7 @@ This guide will walk you through deploying your Beyond Hunger application to Pyt
 3. Click on **Add a new web app**
 4. Select your domain name (it will be `yourusername.pythonanywhere.com`)
 5. Select **Manual configuration** (not the Django option)
-6. Choose **Python 3.12** as your Python version
+6. Choose **Python 3.10** as your Python version
 
 ## Step 3: Clone Your Repository
 

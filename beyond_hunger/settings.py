@@ -63,6 +63,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'food_donation.middleware.DeploymentDebugMiddleware',  # Add for debugging
+    # Uncomment if needed for login control
+    # 'food_donation.middleware.LoginRequiredMiddleware',
 ]
 
 # Custom authentication backends
@@ -174,14 +177,27 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Authentication settings
-LOGIN_URL = 'food_donation:login'
-LOGIN_REDIRECT_URL = 'food_donation:profile'
-LOGOUT_REDIRECT_URL = 'food_donation:home'
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
 
-# Session and CSRF settings
+# Session settings - increase security
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
-SESSION_COOKIE_SECURE = False  # Keep False for now until HTTPS is working
-SESSION_SAVE_EVERY_REQUEST = True  # Update the session expiry on every request
+SESSION_COOKIE_SECURE = False  # Set to True only when using HTTPS
+SESSION_SAVE_EVERY_REQUEST = True  # Update session expiry on every request
+
+# To prevent immediate login redirects
+LOGIN_EXEMPT_URLS = (
+    r'^$',  # Home page
+    r'^about/$',
+    r'^contact/$',
+    r'^login/$',
+    r'^register/$',
+    r'^static/.*',
+    r'^media/.*',
+)
+
+# CSRF settings
 CSRF_COOKIE_AGE = 31449600  # 1 year in seconds
 CSRF_COOKIE_SECURE = False  # Keep False for now until HTTPS is working
 CSRF_USE_SESSIONS = False  # Store CSRF token in cookie, not session
@@ -212,3 +228,62 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # Add Whitenoise to middleware if not already there
 if 'whitenoise.middleware.WhiteNoiseMiddleware' not in MIDDLEWARE:
     MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+
+# Add detailed logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] {levelname} {name} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'debug.log'),
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'food_donation': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
+
+# Handle special debugging environment variables
+DISABLE_LOGIN_REDIRECT = os.environ.get('DISABLE_LOGIN_REDIRECT', 'False') == 'True'
+DISABLE_CSRF = os.environ.get('DISABLE_CSRF', 'False') == 'True'
+USE_DEBUG_MIDDLEWARE = os.environ.get('USE_DEBUG_MIDDLEWARE', 'False') == 'True'
+
+# Disable CSRF temporarily if debugging
+if DISABLE_CSRF:
+    MIDDLEWARE = [m for m in MIDDLEWARE if 'CsrfViewMiddleware' not in m]
+
+# Enable or disable extra debug middleware
+if USE_DEBUG_MIDDLEWARE:
+    if 'food_donation.middleware.DeploymentDebugMiddleware' not in MIDDLEWARE:
+        MIDDLEWARE.append('food_donation.middleware.DeploymentDebugMiddleware')
+else:
+    MIDDLEWARE = [m for m in MIDDLEWARE if 'DeploymentDebugMiddleware' not in m]
+
+# Adjust authentication settings for troubleshooting login issues
+if DISABLE_LOGIN_REDIRECT:
+    LOGIN_URL = '/'
+    LOGIN_REDIRECT_URL = '/'
+    LOGOUT_REDIRECT_URL = '/'

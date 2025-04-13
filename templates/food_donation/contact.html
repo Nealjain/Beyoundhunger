@@ -3,108 +3,110 @@
 {% block title %}Contact Us - Beyond Hunger{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-lg-10 mx-auto">
-        <div class="card animate__animated animate__fadeIn">
-            <div class="card-header bg-primary text-white">
-                <h2 class="mb-0"><i class="fas fa-envelope me-2"></i>Contact Us</h2>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6 animate-on-scroll">
-                        <h3 class="mb-4">Get in Touch</h3>
-                        <p class="lead">We'd love to hear from you! Whether you have a question about donations, volunteering, or anything else, our team is ready to help.</p>
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card animate__animated animate__fadeIn">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0"><i class="fas fa-envelope me-2"></i>Contact Us</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6 animate-on-scroll">
+                            <h3 class="mb-4">Get in Touch</h3>
+                            <p class="lead">We'd love to hear from you! Whether you have a question about donations, volunteering, or anything else, our team is ready to help.</p>
+                            
+                            <form method="post">
+                                {% csrf_token %}
+                                
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Your Name</label>
+                                    <input type="text" class="form-control" id="name" name="name" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email Address</label>
+                                    <input type="email" class="form-control" id="email" name="email" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="subject" class="form-label">Subject</label>
+                                    <input type="text" class="form-control" id="subject" name="subject" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="message" class="form-label">Message</label>
+                                    <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
+                                </div>
+                                
+                                <div class="d-grid gap-2 mt-4">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-paper-plane me-2"></i>Send Message
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                         
-                        <form method="post">
-                            {% csrf_token %}
+                        <div class="col-md-6 animate-on-scroll">
+                            <h3 class="mb-4">Contact Information</h3>
                             
-                            <div class="mb-3">
-                                <label for="name" class="form-label">Your Name</label>
-                                <input type="text" class="form-control" id="name" name="name" required>
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h5><i class="fas fa-map-marker-alt me-2 text-primary"></i>Address</h5>
+                                    <p>123 Main Street<br>City, State 12345<br>United States</p>
+                                </div>
                             </div>
                             
-                            <div class="mb-3">
-                                <label for="email" class="form-label">Email Address</label>
-                                <input type="email" class="form-control" id="email" name="email" required>
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h5><i class="fas fa-phone me-2 text-primary"></i>Phone</h5>
+                                    <p>Main: +1 (555) 123-4567<br>Donations: +1 (555) 987-6543</p>
+                                </div>
                             </div>
                             
-                            <div class="mb-3">
-                                <label for="subject" class="form-label">Subject</label>
-                                <input type="text" class="form-control" id="subject" name="subject" required>
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h5><i class="fas fa-envelope me-2 text-primary"></i>Email</h5>
+                                    <p>General: info@beyondhunger.org<br>Donations: donate@beyondhunger.org<br>Volunteers: volunteer@beyondhunger.org</p>
+                                </div>
                             </div>
                             
-                            <div class="mb-3">
-                                <label for="message" class="form-label">Message</label>
-                                <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5><i class="fas fa-clock me-2 text-primary"></i>Hours</h5>
+                                    <p>Monday - Friday: 9:00 AM - 5:00 PM<br>Saturday: 10:00 AM - 2:00 PM<br>Sunday: Closed</p>
+                                </div>
                             </div>
-                            
-                            <div class="d-grid gap-2 mt-4">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-paper-plane me-2"></i>Send Message
-                                </button>
-                            </div>
-                        </form>
+                        </div>
                     </div>
                     
-                    <div class="col-md-6 animate-on-scroll">
-                        <h3 class="mb-4">Contact Information</h3>
-                        
-                        <div class="card mb-4">
-                            <div class="card-body">
-                                <h5><i class="fas fa-map-marker-alt me-2 text-primary"></i>Address</h5>
-                                <p>123 Main Street<br>City, State 12345<br>United States</p>
-                            </div>
-                        </div>
-                        
-                        <div class="card mb-4">
-                            <div class="card-body">
-                                <h5><i class="fas fa-phone me-2 text-primary"></i>Phone</h5>
-                                <p>Main: +1 (555) 123-4567<br>Donations: +1 (555) 987-6543</p>
-                            </div>
-                        </div>
-                        
-                        <div class="card mb-4">
-                            <div class="card-body">
-                                <h5><i class="fas fa-envelope me-2 text-primary"></i>Email</h5>
-                                <p>General: info@beyondhunger.org<br>Donations: donate@beyondhunger.org<br>Volunteers: volunteer@beyondhunger.org</p>
-                            </div>
-                        </div>
-                        
-                        <div class="card">
-                            <div class="card-body">
-                                <h5><i class="fas fa-clock me-2 text-primary"></i>Hours</h5>
-                                <p>Monday - Friday: 9:00 AM - 5:00 PM<br>Saturday: 10:00 AM - 2:00 PM<br>Sunday: Closed</p>
+                    <div class="row mt-4 mt-md-5">
+                        <div class="col-12 animate-on-scroll">
+                            <h3 class="mb-3 mb-md-4 text-center">Find Us</h3>
+                            <div class="ratio ratio-16x9">
+                                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3024.2219901290355!2d-74.00369368400567!3d40.71312937933185!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25a23e28c1191%3A0x49f75d3281df052a!2s123%20Main%20St%2C%20New%20York%2C%20NY%2010001%2C%20USA!5e0!3m2!1sen!2sus!4v1625247816664!5m2!1sen!2sus" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="row mt-5">
-                    <div class="col-12 animate-on-scroll">
-                        <h3 class="mb-4 text-center">Find Us</h3>
-                        <div class="ratio ratio-16x9">
-                            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3024.2219901290355!2d-74.00369368400567!3d40.71312937933185!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25a23e28c1191%3A0x49f75d3281df052a!2s123%20Main%20St%2C%20New%20York%2C%20NY%2010001%2C%20USA!5e0!3m2!1sen!2sus!4v1625247816664!5m2!1sen!2sus" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row mt-5">
-                    <div class="col-12 text-center animate-on-scroll">
-                        <h3>Connect With Us</h3>
-                        <p class="lead mb-4">Follow us on social media for updates and news</p>
-                        <div class="d-flex justify-content-center">
-                            <a href="#" class="btn btn-outline-primary mx-2">
-                                <i class="fab fa-facebook-f fa-lg"></i>
-                            </a>
-                            <a href="#" class="btn btn-outline-primary mx-2">
-                                <i class="fab fa-twitter fa-lg"></i>
-                            </a>
-                            <a href="#" class="btn btn-outline-primary mx-2">
-                                <i class="fab fa-instagram fa-lg"></i>
-                            </a>
-                            <a href="#" class="btn btn-outline-primary mx-2">
-                                <i class="fab fa-linkedin-in fa-lg"></i>
-                            </a>
+                    
+                    <div class="row mt-4 mt-md-5">
+                        <div class="col-12 text-center animate-on-scroll">
+                            <h3>Connect With Us</h3>
+                            <p class="lead mb-4">Follow us on social media for updates and news</p>
+                            <div class="d-flex justify-content-center flex-wrap gap-2">
+                                <a href="#" class="btn btn-outline-primary">
+                                    <i class="fab fa-facebook-f fa-lg"></i>
+                                </a>
+                                <a href="#" class="btn btn-outline-primary">
+                                    <i class="fab fa-twitter fa-lg"></i>
+                                </a>
+                                <a href="#" class="btn btn-outline-primary">
+                                    <i class="fab fa-instagram fa-lg"></i>
+                                </a>
+                                <a href="#" class="btn btn-outline-primary">
+                                    <i class="fab fa-linkedin-in fa-lg"></i>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
