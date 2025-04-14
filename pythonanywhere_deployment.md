@@ -8,15 +8,17 @@ Log in to PythonAnywhere and open a Bash console, then:
 
 ```bash
 # Navigate to your project directory
-cd /home/jainneal/beyond_hunger
+cd /home/nealjain/beyond_hunger
 
-# If you've set up Git:
+# Pull the latest changes (including the f-string fixes)
 git fetch --all
 git reset --hard origin/main
 
 # If you haven't set up Git, you'll need to manually upload the files
 # using the PythonAnywhere Files interface
 ```
+
+> **Important**: We've fixed critical f-string issues in the code that were causing syntax errors. These fixes have been pushed to the GitHub repository.
 
 ## 2. Update Dependencies
 
