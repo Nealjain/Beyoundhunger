@@ -3,7 +3,7 @@ from django.utils.html import format_html
 from .models import (
     UserProfile, FoodDonation, Volunteer, DeliveryAssignment, 
     MarketplaceLister, MarketplaceItem, MarketplaceItemImage, 
-    FoodDonationImage, IDVerificationImage, MoneyDonation
+    FoodDonationImage, IDVerificationImage, MoneyDonation, ChatbotResponse
 )
 
 class FoodDonationImageInline(admin.TabularInline):
@@ -83,6 +83,26 @@ class MarketplaceItemAdmin(admin.ModelAdmin):
     search_fields = ['title', 'description', 'seller__username']
     inlines = [MarketplaceItemImageInline]
 
+class ChatbotResponseAdmin(admin.ModelAdmin):
+    list_display = ['category', 'question', 'keywords_short', 'priority', 'is_active']
+    list_filter = ['category', 'is_active', 'priority']
+    search_fields = ['question', 'response', 'keywords']
+    list_editable = ['priority', 'is_active']
+    actions = ['duplicate_response']
+    
+    def keywords_short(self, obj):
+        return obj.keywords[:50] + '...' if len(obj.keywords) > 50 else obj.keywords
+    keywords_short.short_description = 'Keywords'
+    
+    def duplicate_response(self, request, queryset):
+        for obj in queryset:
+            obj.pk = None
+            obj.question = f"COPY - {obj.question}"
+            obj.is_active = False
+            obj.save()
+        self.message_user(request, f"{queryset.count()} response(s) duplicated. Edit the copies as needed.")
+    duplicate_response.short_description = "Duplicate selected responses"
+
 # Register all models
 admin.site.register(UserProfile)
 admin.site.register(FoodDonation, FoodDonationAdmin)
@@ -90,4 +110,5 @@ admin.site.register(Volunteer)
 admin.site.register(DeliveryAssignment)
 admin.site.register(MarketplaceLister, MarketplaceListerAdmin)
 admin.site.register(MarketplaceItem, MarketplaceItemAdmin)
-admin.site.register(MoneyDonation) 
+admin.site.register(MoneyDonation)
+admin.site.register(ChatbotResponse, ChatbotResponseAdmin) 

@@ -212,3 +212,32 @@ class MoneyDonation(models.Model):
     
     class Meta:
         ordering = ['-created_at']
+
+# Add ChatbotResponse model to store all responses
+class ChatbotResponse(models.Model):
+    CATEGORY_CHOICES = [
+        ('greeting', 'Greeting'),
+        ('food_donation', 'Food Donation'),
+        ('money_donation', 'Money Donation'),
+        ('volunteer', 'Volunteer'),
+        ('marketplace', 'Marketplace'),
+        ('account', 'Account'),
+        ('general', 'General Information'),
+        ('technical', 'Technical'),
+        ('fallback', 'Fallback'),
+    ]
+    
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
+    keywords = models.TextField(help_text="Comma-separated keywords that trigger this response")
+    question = models.TextField(help_text="Example question that would trigger this response")
+    response = models.TextField(help_text="The chatbot's response")
+    priority = models.IntegerField(default=0, help_text="Higher priority responses will be chosen over lower ones when multiple keywords match")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.category}: {self.question[:50]}..."
+    
+    class Meta:
+        ordering = ['-priority', 'category']
