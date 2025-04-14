@@ -343,87 +343,131 @@ def chatbot_api(request):
         # Get message from request
         message = request.data.get('message', '')
         if not message:
-            return JsonResponse({'error': 'Message is required'}, status=400)
+            return JsonResponse({'response': 'How can I help you today?'})
         
         # Initialize OpenAI client
-        client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
-        
-        # System prompt to contextualize the AI
-        system_prompt = """
-        You are Mr.Jain, an AI assistant for the Beyond Hunger food donation platform.
-        
-        About Beyond Hunger:
-        - We connect food donors with those in need
-        - We accept both food and monetary donations
-        - We have a volunteer program for food delivery
-        - We have a marketplace where verified users can list food items
-        - Users can report marketplace listings if they find them inappropriate
-        - We have a profile page where users can track their donations
+        try:
+            client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+            
+            # System prompt to contextualize the AI
+            system_prompt = """
+            You are Mr.Jain, an AI assistant for the Beyond Hunger food donation platform.
+            
+            About Beyond Hunger:
+            - We connect food donors with those in need
+            - We accept both food and monetary donations
+            - We have a volunteer program for food delivery
+            - We have a marketplace where verified users can list food items
+            - Users can report marketplace listings if they find them inappropriate
+            - We have a profile page where users can track their donations
 
-        Donation Process:
-        - Users can donate food by filling out our donation form
-        - Food donations include details like food type, quantity, and pickup address
-        - We accept monetary donations through various payment methods
-        - All donations are tracked and users can see their status in their profile
+            Donation Process:
+            - Users can donate food by filling out our donation form
+            - Food donations include details like food type, quantity, and pickup address
+            - We accept monetary donations through various payment methods
+            - All donations are tracked and users can see their status in their profile
 
-        Volunteer Program:
-        - Volunteers help deliver food from donors to recipients
-        - Volunteers can register and specify their availability and service area
-        - Admins can assign delivery tasks to appropriate volunteers
-        - Volunteers receive notifications about new assignments
+            Volunteer Program:
+            - Volunteers help deliver food from donors to recipients
+            - Volunteers can register and specify their availability and service area
+            - Admins can assign delivery tasks to appropriate volunteers
+            - Volunteers receive notifications about new assignments
 
-        Marketplace:
-        - The marketplace allows verified users to list food items
-        - Users need to apply to become marketplace listers with ID verification
-        - Items can be listed with details like title, description, price, and images
-        - Users can report inappropriate listings for admin review
+            Marketplace:
+            - The marketplace allows verified users to list food items
+            - Users need to apply to become marketplace listers with ID verification
+            - Items can be listed with details like title, description, price, and images
+            - Users can report inappropriate listings for admin review
 
-        Administrative Features:
-        - Admins can review and approve/reject marketplace lister applications
-        - Admins can manage food donations, assigning them to volunteers
-        - Admins can hide or delete inappropriate content
+            Administrative Features:
+            - Admins can review and approve/reject marketplace lister applications
+            - Admins can manage food donations, assigning them to volunteers
+            - Admins can hide or delete inappropriate content
 
-        Be helpful, friendly, and provide specific information about the platform.
-        Your answers should be thoughtful and comprehensive, but concise.
-        """
-        
-        # Call OpenAI API
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": message}
-            ],
-            max_tokens=250,  # Increased token limit for more detailed responses
-            temperature=0.7,
-        )
-        
-        # Get response text
-        bot_response = response.choices[0].message.content.strip()
-        
-        # Save the chat message in the database if user is authenticated
-        if request.user.is_authenticated:
-            from food_donation.models import ChatbotMessage
-            ChatbotMessage.objects.create(
-                user=request.user,
-                message=message,
-                response=bot_response,
-                is_user_message=True
+            Be helpful, friendly, and provide specific information about the platform.
+            Your answers should be thoughtful and comprehensive, but concise.
+            IMPORTANT: Always respond to every user message, even short greetings like 'hi', 'hello', etc.
+            For greetings, respond warmly and ask how you can help with food donations, volunteering, or the marketplace.
+            """
+            
+            # Add basic logging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"Processing chatbot message: {message}")
+            
+            # Call OpenAI API
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": message}
+                ],
+                max_tokens=250,
+                temperature=0.7,
             )
-        
-        return JsonResponse({
-            'response': bot_response
-        })
+            
+            # Get response text
+            bot_response = response.choices[0].message.content.strip()
+            
+            # Save the chat message in the database if user is authenticated
+            if request.user.is_authenticated:
+                from food_donation.models import ChatbotMessage
+                ChatbotMessage.objects.create(
+                    user=request.user,
+                    message=message,
+                    response=bot_response,
+                    is_user_message=True
+                )
+            
+            return JsonResponse({
+                'response': bot_response
+            })
+            
+        except Exception as api_error:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"OpenAI API error: {str(api_error)}")
+            
+            # Provide fallback responses based on the message content
+            lower_message = message.lower()
+            
+            # Greeting messages
+            if any(greeting in lower_message for greeting in ['hi', 'hello', 'hey', 'greetings']):
+                return JsonResponse({
+                    'response': "Hello! I'm Mr.Jain, your Beyond Hunger assistant. How can I help you with food donation, volunteering, or using our marketplace today?"
+                })
+            
+            # Questions about donations
+            elif any(word in lower_message for word in ['donate', 'donation', 'give', 'food', 'money']):
+                return JsonResponse({
+                    'response': "You can donate food by clicking on 'Donate Food' in the navigation menu. We also accept monetary donations through the 'Donate Money' option. Your contributions help us serve those in need!"
+                })
+            
+            # Questions about volunteering
+            elif any(word in lower_message for word in ['volunteer', 'help', 'deliver', 'assist']):
+                return JsonResponse({
+                    'response': "We welcome volunteers to help with food delivery! You can register as a volunteer in your profile page, specifying your availability and service area."
+                })
+            
+            # Questions about the marketplace
+            elif any(word in lower_message for word in ['marketplace', 'market', 'buy', 'sell', 'list']):
+                return JsonResponse({
+                    'response': "Our marketplace allows verified users to list food items. You need to apply and get verified before you can list items. You can browse the marketplace without registration."
+                })
+            
+            # Default fallback response
+            else:
+                return JsonResponse({
+                    'response': "I understand you're interested in Beyond Hunger. How can I help you with food donations, volunteering, or using our marketplace today?"
+                })
     
     except Exception as e:
         # Log the error
         import logging
         logger = logging.getLogger(__name__)
-        logger.error(f"Chatbot API error: {str(e)}")
+        logger.error(f"Chatbot general error: {str(e)}")
         
-        # Return a helpful error message
+        # Always return a friendly response even if errors occur
         return JsonResponse({
-            'response': "I'm sorry, I'm having trouble connecting right now. Please try again later.",
-            'error': 'Sorry, I encountered an issue. Please try again later.',
-            'details': str(e) if settings.DEBUG else ''
-        }, status=500) 
+            'response': "Hello! I'm Mr.Jain from Beyond Hunger. I'm here to help with food donations, volunteering, and our marketplace. How can I assist you today?"
+        }) 
