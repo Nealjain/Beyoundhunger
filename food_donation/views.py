@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from .models import (
     UserProfile, FoodDonation, Volunteer, DeliveryAssignment, 
     MarketplaceLister, MarketplaceItem, MarketplaceItemImage, 
-    FoodDonationImage, IDVerificationImage, MoneyDonation
+    FoodDonationImage, IDVerificationImage, MoneyDonation, ContactMessage, MarketplaceBid, MarketplaceChat, Notification
 )
 from django.utils import timezone
 from decimal import Decimal
@@ -15,17 +15,97 @@ from django.core.paginator import Paginator
 import os
 from django.db import connection
 from django.core.mail import EmailMultiAlternatives
+from django.http import HttpResponse, FileResponse, JsonResponse
+import io
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from datetime import datetime
+from PIL import Image
+from django.contrib.auth.decorators import user_passes_test
+import csv
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from django.conf import settings
+from django.views.decorators.http import require_POST
+import uuid
+from .utils import send_money_donation_confirmation
 
 def home(request):
+    # Get 5 most recent donations for the recent donations section
+    recent_donations = FoodDonation.objects.order_by('-created_at')[:5]
+    
+    # Get recent donations with profile photos for donor showcase (up to 3)
+    donor_showcase = []
+    processed_donors = set()  # To track which donors we've already processed
+    
+    # Get all recent donations
+    all_recent_donations = FoodDonation.objects.select_related('donor__userprofile').order_by('-created_at')[:20]
+    
+    # Process each donation to find unique donors with photos
+    for donation in all_recent_donations:
+        # Skip if we already have 3 donors or if we've already processed this donor
+        if len(donor_showcase) >= 3 or donation.donor.id in processed_donors:
+            continue
+            
+        try:
+            donor = donation.donor
+            profile = donor.userprofile
+            
+            # Get donor's photo URL
+            photo_url = profile.get_profile_photo_url()
+            
+            if photo_url:  # Only include donors with photos
+                donor_showcase.append({
+                    'name': donor.get_full_name() or donor.username,
+                    'photo_url': photo_url,
+                    'food_type': donation.food_type,
+                    'quantity': donation.quantity,
+                    'date': donation.created_at,
+                })
+                processed_donors.add(donor.id)  # Mark this donor as processed
+        except Exception as e:
+            # If there's an error getting profile info, skip this donor
+            print(f"Error getting donor showcase info: {str(e)}")
+            continue
+    
     context = {
         'total_donations': FoodDonation.objects.count(),
         'total_volunteers': Volunteer.objects.count(),
-        'total_requests': FoodDonation.objects.filter(status='delivered').count(),  # Changed to show delivered donations
-        'recent_donations': FoodDonation.objects.order_by('-created_at')[:5],
+        'total_requests': FoodDonation.objects.filter(status='delivered').count(),
+        'recent_donations': recent_donations,
+        'donor_showcase': donor_showcase,  # Add the donor showcase data
     }
     return render(request, 'food_donation/home.html', context)
 
 def money_donate(request):
+    if request.method == 'POST':
+        amount = request.POST.get('amount')
+        transaction_id = request.POST.get('transaction_id', '')
+        payment_method = request.POST.get('payment_method', 'other')
+        
+        if amount and request.user.is_authenticated:
+            money_donation = MoneyDonation.objects.create(
+                donor=request.user,
+                amount=float(amount),
+                transaction_id=transaction_id,
+                payment_method=payment_method,
+                is_acknowledged=True
+            )
+            # Send email confirmation if email is configured
+            try:
+                send_money_donation_confirmation(request.user, money_donation)
+            except:
+                pass  # Handle silently if email sending fails
+            messages.success(request, "Thank you for your donation! It has been recorded.")
+            return redirect('food_donation:money_donation_history')
+        elif amount and not request.user.is_authenticated:
+            messages.error(request, "Please log in to make a donation.")
+            return redirect('food_donation:login')
+        else:
+            messages.error(request, "Please enter a valid amount.")
     return render(request, 'food_donation/money_donate.html')
 
 @login_required
@@ -33,8 +113,16 @@ def donate(request):
     # Get current date for minimum date fields
     current_date = timezone.now().date().isoformat()
     
+    # Get or create user profile
+    user_profile, created = UserProfile.objects.get_or_create(
+        user=request.user,
+        defaults={
+            'phone': '',
+            'address': ''
+        }
+    )
+    
     # Pre-populate data from user profile
-    user_profile = request.user.userprofile
     initial_data = {
         'pickup_address': user_profile.address,
     }
@@ -60,7 +148,6 @@ def donate(request):
                 donation.amount = Decimal(request.POST['amount'])
                 
             # Generate a simple transaction ID (in a real app, this would be from a payment processor)
-            import uuid
             donation.transaction_id = str(uuid.uuid4())[:10]
             
             payment_method_display = 'UPI' if donation.payment_method == 'upi' else 'Bank Transfer'
@@ -77,7 +164,7 @@ def donate(request):
                     image=image
                 )
         
-        messages.success(request, 'Thank you for your donation!')
+        messages.success(request, 'Thank you for your donation! A receipt has been generated and is available for download from your profile page.')
         return redirect('food_donation:profile')
     
     context = {
@@ -91,9 +178,87 @@ def about(request):
 
 def contact(request):
     if request.method == 'POST':
-        # Handle contact form submission
+        # Get form data
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone', '')
+        subject = request.POST.get('subject')
+        message = request.POST.get('message')
+        
+        # Create contact message
+        contact_msg = ContactMessage(
+            name=name,
+            email=email,
+            phone=phone,
+            subject=subject,
+            message=message,
+        )
+        
+        # Associate with user if logged in
+        if request.user.is_authenticated:
+            contact_msg.user = request.user
+        
+        contact_msg.save()
+        
+        # Optional: Send email notification to admin
+        try:
+            admin_subject = f"New Contact Form Submission: {subject}"
+            admin_message = f"Name: {name}\nEmail: {email}\nPhone: {phone}\n\nMessage:\n{message}"
+            admin_html = f"""
+            <html>
+            <head>
+                <style>
+                    body {{ font-family: Arial, sans-serif; line-height: 1.6; }}
+                    .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                    .header {{ background-color: #4CAF50; color: white; padding: 10px; }}
+                    .content {{ padding: 20px; border: 1px solid #ddd; }}
+                    .field {{ margin-bottom: 10px; }}
+                    .label {{ font-weight: bold; }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h2>New Contact Form Submission</h2>
+                    </div>
+                    <div class="content">
+                        <div class="field">
+                            <span class="label">Name:</span> {name}
+                        </div>
+                        <div class="field">
+                            <span class="label">Email:</span> {email}
+                        </div>
+                        <div class="field">
+                            <span class="label">Phone:</span> {phone or 'Not provided'}
+                        </div>
+                        <div class="field">
+                            <span class="label">Subject:</span> {subject}
+                        </div>
+                        <div class="field">
+                            <span class="label">Message:</span><br>
+                            {message.replace('\n', '<br>')}
+                        </div>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+            
+            # Send email to admin
+            from_email = 'Beyond Hunger <beyoundhunger1@gmail.com>'
+            to_email = 'beyoundhunger1@gmail.com'  # Admin email
+            
+            email = EmailMultiAlternatives(admin_subject, admin_message, from_email, [to_email])
+            email.attach_alternative(admin_html, "text/html")
+            email.send()
+            
+        except Exception as e:
+            # Log error but don't show to user
+            print(f"Error sending admin notification: {str(e)}")
+        
         messages.success(request, 'Thank you for your message. We will get back to you soon.')
         return redirect('food_donation:contact')
+    
     return render(request, 'food_donation/contact.html')
 
 def register(request):
@@ -150,7 +315,15 @@ def logout_view(request):
 
 @login_required
 def profile(request):
-    user_profile = request.user.userprofile
+    # Get or create user profile
+    user_profile, created = UserProfile.objects.get_or_create(
+        user=request.user,
+        defaults={
+            'phone': '',
+            'address': ''
+        }
+    )
+    
     food_donations = FoodDonation.objects.filter(donor=request.user)
     money_donations = MoneyDonation.objects.filter(donor=request.user)
     
@@ -289,7 +462,11 @@ def marketplace(request):
     search_query = request.GET.get('search', '')
     show_free = request.GET.get('free', '') == 'on'
     
-    items = MarketplaceItem.objects.filter(status='available').order_by('-created_at')
+    # Use select_related and prefetch_related for efficient loading
+    items = MarketplaceItem.objects.filter(status='available')\
+        .select_related('seller')\
+        .prefetch_related('bids')\
+        .order_by('-created_at')
     
     # Apply filters
     if category:
@@ -346,10 +523,53 @@ def marketplace_item_detail(request, pk):
         item.status = 'expired'
         item.save()
     
+    # Get bids for this item
+    bids = []
+    user_bid = None
+    highest_bid = None
+    
+    if not item.is_free:
+        # Get all bids for this item, ordered by amount (highest first)
+        all_bids = MarketplaceBid.objects.filter(item=item).order_by('-amount')
+        
+        if is_owner:
+            # If owner, show all bids
+            bids = all_bids
+        
+        # Get current user's bid
+        if request.user.is_authenticated and not is_owner:
+            user_bid = MarketplaceBid.objects.filter(item=item, bidder=request.user).first()
+        
+        # Get the highest bid
+        highest_bid = all_bids.first()
+    
+    # Get bid statistics
+    bid_count = item.get_bid_count()
+    avg_bid = item.get_average_bid()
+    
+    # Check for existing conversations between seller and current user
+    has_conversation = False
+    if request.user.is_authenticated and not is_owner:
+        has_conversation = MarketplaceChat.objects.filter(
+            item=item,
+            sender=request.user,
+            receiver=item.seller
+        ).exists() or MarketplaceChat.objects.filter(
+            item=item,
+            sender=item.seller,
+            receiver=request.user
+        ).exists()
+    
     context = {
         'item': item,
         'is_owner': is_owner,
         'additional_images': additional_images,
+        'bids': bids,
+        'user_bid': user_bid,
+        'highest_bid': highest_bid,
+        'total_bids': bid_count,
+        'average_bid': avg_bid,
+        'has_conversation': has_conversation
     }
     return render(request, 'food_donation/marketplace_item_detail.html', context)
 
@@ -389,7 +609,14 @@ def apply_marketplace_lister(request):
     
     # Pre-fill form with user profile data if available
     try:
-        user_profile = request.user.userprofile
+        # Get or create user profile
+        user_profile, created = UserProfile.objects.get_or_create(
+            user=request.user,
+            defaults={
+                'phone': '',
+                'address': ''
+            }
+        )
         initial_data = {
             'contact_phone': user_profile.phone,
             'address': user_profile.address,
@@ -435,6 +662,7 @@ def create_marketplace_item(request):
         location = request.POST.get('location')
         expiry_date = request.POST.get('expiry_date') or None
         is_free = 'is_free' in request.POST
+        allow_bidding = 'allow_bidding' in request.POST
         
         # Create item
         item = MarketplaceItem(
@@ -445,6 +673,7 @@ def create_marketplace_item(request):
             quantity=quantity,
             location=location,
             is_free=is_free,
+            allow_bidding=allow_bidding,
         )
         
         # Handle expiry date
@@ -526,6 +755,9 @@ def edit_marketplace_item(request, pk):
             price = request.POST.get('price')
             if price:
                 item.price = Decimal(price)
+                
+        # Handle bidding option
+        item.allow_bidding = 'allow_bidding' in request.POST
         
         # Handle main image if new one provided
         if 'main_image' in request.FILES:
@@ -726,15 +958,27 @@ def report_marketplace_item(request, pk):
         report_reason = request.POST.get('report_reason')
         report_details = request.POST.get('report_details', '')
         
-        # Create a new model instance for the report
-        report = MarketplaceReport.objects.create(
-            reporter=request.user,
-            item=item,
-            reason=report_reason,
-            details=report_details
-        )
-        
-        # Optional: Send notification to admins about the new report
+        # For now, just send a message to admins (in a real app, you'd save to a model)
+        try:
+            admin_emails = User.objects.filter(is_superuser=True).values_list('email', flat=True)
+            if admin_emails:
+                from_email = 'Beyond Hunger <beyoundhunger1@gmail.com>'
+                subject = f'Item Reported: {item.title}'
+                message = f"""
+                An item has been reported:
+                
+                Item: {item.title} (ID: {item.id})
+                Reporter: {request.user.username} (ID: {request.user.id})
+                Reason: {report_reason}
+                Details: {report_details}
+                
+                Please review this listing and take appropriate action.
+                """
+                
+                from django.core.mail import send_mail
+                send_mail(subject, message, from_email, list(admin_emails))
+        except Exception as e:
+            print(f"Error sending report email: {str(e)}")
         
         messages.success(request, "Thank you for your report. Our team will review it shortly.")
         return redirect('food_donation:marketplace_item_detail', pk=pk)
@@ -743,48 +987,906 @@ def report_marketplace_item(request, pk):
     return redirect('food_donation:marketplace_item_detail', pk=pk)
 
 @login_required
+def place_bid(request, pk):
+    """View to place a bid on a marketplace item"""
+    item = get_object_or_404(MarketplaceItem, pk=pk)
+    
+    # Can't bid on your own items
+    if request.user == item.seller:
+        messages.error(request, "You cannot bid on your own listing.")
+        return redirect('food_donation:marketplace_item_detail', pk=pk)
+    
+    # Can't bid on items that aren't available
+    if item.status != 'available':
+        messages.error(request, "This item is not available for bidding.")
+        return redirect('food_donation:marketplace_item_detail', pk=pk)
+    
+    # Can't bid on free items
+    if item.is_free:
+        messages.error(request, "Free items don't accept bids. Please use the contact button instead.")
+        return redirect('food_donation:marketplace_item_detail', pk=pk)
+    
+    # Check if bidding is allowed for this item
+    if not item.allow_bidding:
+        messages.error(request, "This item does not accept bids. Please contact the seller directly.")
+        return redirect('food_donation:marketplace_item_detail', pk=pk)
+    
+    if request.method == 'POST':
+        amount = request.POST.get('bid_amount')
+        message = request.POST.get('bid_message', '')
+        
+        try:
+            amount = Decimal(amount)
+            
+            # Validate bid amount
+            if amount <= 0:
+                messages.error(request, "Bid amount must be greater than zero.")
+                return redirect('food_donation:marketplace_item_detail', pk=pk)
+            
+            # Check if there's a minimum price
+            if item.price and amount < item.price:
+                messages.error(request, f"Bid amount must be at least ${item.price}.")
+                return redirect('food_donation:marketplace_item_detail', pk=pk)
+            
+            # Check for existing bid from this user
+            existing_bid = MarketplaceBid.objects.filter(item=item, bidder=request.user).first()
+            
+            if existing_bid:
+                # Update existing bid
+                existing_bid.amount = amount
+                existing_bid.message = message
+                existing_bid.is_rejected = False  # Reset rejected status if re-bidding
+                existing_bid.save()
+                bid = existing_bid
+                messages.success(request, "Your bid has been updated.")
+            else:
+                # Create new bid
+                bid = MarketplaceBid.objects.create(
+                    item=item,
+                    bidder=request.user,
+                    amount=amount,
+                    message=message
+                )
+                messages.success(request, "Your bid has been placed successfully.")
+            
+            # Create notification for the seller
+            Notification.objects.create(
+                user=item.seller,
+                type='bid',
+                title=f'New bid on {item.title}',
+                message=f'{request.user.username} placed a bid of ${amount} on your listing "{item.title}"',
+                related_item=item,
+                related_bid=bid
+            )
+            
+            # Notify seller (in a real app, you'd send an email)
+            try:
+                from_email = 'Beyond Hunger <beyoundhunger1@gmail.com>'
+                subject = f'New Bid on Your Listing: {item.title}'
+                message_body = f"""
+                You have received a new bid:
+                
+                Item: {item.title}
+                Bidder: {request.user.username}
+                Amount: ${amount}
+                Message: {message}
+                
+                Log in to your account to view and respond to this bid.
+                """
+                
+                from django.core.mail import send_mail
+                send_mail(subject, message_body, from_email, [item.seller.email])
+            except Exception as e:
+                print(f"Error sending bid notification email: {str(e)}")
+                
+            return redirect('food_donation:marketplace_item_detail', pk=pk)
+            
+        except (ValueError, InvalidOperation):
+            messages.error(request, "Please enter a valid amount.")
+            return redirect('food_donation:marketplace_item_detail', pk=pk)
+            
+    return redirect('food_donation:marketplace_item_detail', pk=pk)
+
+@login_required
+def accept_bid(request, item_pk, bid_pk):
+    """View to accept a bid"""
+    item = get_object_or_404(MarketplaceItem, pk=item_pk)
+    bid = get_object_or_404(MarketplaceBid, pk=bid_pk, item=item)
+    
+    # Only the seller can accept bids
+    if request.user != item.seller:
+        messages.error(request, "You don't have permission to accept bids on this item.")
+        return redirect('food_donation:marketplace_item_detail', pk=item_pk)
+    
+    # Can only accept bids on available items
+    if item.status != 'available':
+        messages.error(request, "This item is no longer available.")
+        return redirect('food_donation:marketplace_item_detail', pk=item_pk)
+    
+    if request.method == 'POST':
+        # Accept the bid
+        bid.accept_bid()
+        
+        # Create notification for the bidder
+        Notification.objects.create(
+            user=bid.bidder,
+            type='bid_accepted',
+            title=f'Your bid was accepted!',
+            message=f'Your bid of ${bid.amount} for "{item.title}" has been accepted by the seller.',
+            related_item=item,
+            related_bid=bid
+        )
+        
+        # Notify the bidder
+        try:
+            from_email = 'Beyond Hunger <beyoundhunger1@gmail.com>'
+            subject = f'Your Bid on {item.title} Has Been Accepted!'
+            message_body = f"""
+            Congratulations! Your bid has been accepted:
+            
+            Item: {item.title}
+            Bid Amount: ${bid.amount}
+            
+            Please contact the seller to arrange pickup/delivery.
+            Seller: {item.seller.username}
+            Email: {item.seller.email}
+            
+            Thank you for using our marketplace!
+            """
+            
+            from django.core.mail import send_mail
+            send_mail(subject, message_body, from_email, [bid.bidder.email])
+        except Exception as e:
+            print(f"Error sending bid acceptance email: {str(e)}")
+        
+        messages.success(request, f"You have accepted the bid from {bid.bidder.username} for ${bid.amount}.")
+        return redirect('food_donation:marketplace_item_detail', pk=item_pk)
+    
+    return redirect('food_donation:marketplace_item_detail', pk=item_pk)
+
+@login_required
+@require_POST
 def confirm_money_donation(request):
+    amount = request.POST.get('amount')
+    payment_method = request.POST.get('payment_method', 'other')
+    transaction_id = request.POST.get('transaction_id', '')
+    
+    try:
+        amount = float(amount)
+        if amount <= 0:
+            return JsonResponse({'status': 'error', 'message': 'Amount must be positive'})
+            
+        # Create the money donation record
+        donation = MoneyDonation.objects.create(
+            donor=request.user,
+            amount=amount,
+            payment_method=payment_method,
+            transaction_id=transaction_id or str(uuid.uuid4())[:10]
+        )
+        
+        # Send confirmation email
+        send_money_donation_confirmation(request.user, donation)
+        
+        return JsonResponse({
+            'status': 'success', 
+            'message': 'Thank you for your donation! A confirmation email has been sent.'
+        })
+    except ValueError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid amount'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': f'An error occurred: {str(e)}'})
+
+def chatbot(request):
+    """View for the chatbot interface"""
+    return render(request, 'food_donation/chatbot.html')
+
+@login_required
+def admin_contact_messages(request):
+    """Admin view to manage contact messages"""
+    if not request.user.is_superuser:
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('food_donation:home')
+    
+    # Get all contact messages
+    contact_messages = ContactMessage.objects.all().order_by('-created_at')
+    
+    # Filter by status if requested
+    status_filter = request.GET.get('status', '')
+    if status_filter:
+        contact_messages = contact_messages.filter(status=status_filter)
+    
+    context = {
+        'contact_messages': contact_messages,
+        'status_choices': ContactMessage.STATUS_CHOICES,
+        'current_status': status_filter,
+    }
+    
+    return render(request, 'food_donation/admin_contact_messages.html', context)
+
+@login_required
+def update_contact_message_status(request, pk):
+    """Admin action to update contact message status"""
+    if not request.user.is_superuser:
+        messages.error(request, 'You do not have permission to perform this action.')
+        return redirect('food_donation:home')
+    
+    if request.method == 'POST':
+        contact_message = get_object_or_404(ContactMessage, pk=pk)
+        new_status = request.POST.get('status')
+        
+        if new_status in dict(ContactMessage.STATUS_CHOICES).keys():
+            contact_message.status = new_status
+            contact_message.save()
+            
+            messages.success(request, f'Message status updated to {dict(ContactMessage.STATUS_CHOICES)[new_status]}.')
+        else:
+            messages.error(request, 'Invalid status.')
+            
+    return redirect('food_donation:admin_contact_messages')
+
+@login_required
+def complete_profile(request):
+    """View for completing user profile after social login"""
+    # If user doesn't need profile completion, redirect to home
+    if not request.session.get('needs_profile_completion', False):
+        return redirect('food_donation:home')
+    
+    user_profile, created = UserProfile.objects.get_or_create(
+        user=request.user,
+        defaults={
+            'phone': '',
+            'address': ''
+        }
+    )
+    
+    # Check if user has Google account with profile picture
+    google_picture_url = None
+    try:
+        social_account = request.user.socialaccount_set.filter(provider='google').first()
+        if social_account and 'picture' in social_account.extra_data:
+            google_picture_url = social_account.extra_data['picture']
+    except:
+        pass
+    
+    if request.method == 'POST':
+        # Update user profile with submitted data
+        phone = request.POST.get('phone', '')
+        address = request.POST.get('address', '')
+        use_google_photo = request.POST.get('use_google_photo') == 'on'
+        
+        if phone and address:
+            user_profile.phone = phone
+            user_profile.address = address
+            
+            # Handle profile photo
+            if 'profile_photo' in request.FILES:
+                user_profile.profile_photo = request.FILES['profile_photo']
+            elif use_google_photo and google_picture_url:
+                # No need to download, we'll use the URL directly via the get_profile_photo_url method
+                pass
+            
+            user_profile.save()
+            
+            # Clear the flag from session
+            if 'needs_profile_completion' in request.session:
+                del request.session['needs_profile_completion']
+            
+            messages.success(request, 'Thank you for completing your profile!')
+            return redirect('food_donation:profile')
+        else:
+            messages.error(request, 'Please provide both phone number and address.')
+    
+    return render(request, 'food_donation/complete_profile.html', {
+        'user_profile': user_profile,
+        'google_picture_url': google_picture_url
+    })
+
+@login_required
+def download_donation_receipt(request, donation_id):
+    """Generate and download a PDF receipt for a food donation"""
+    # If user is admin, allow downloading any donation receipt
+    if request.user.is_superuser:
+        donation = get_object_or_404(FoodDonation, id=donation_id)
+    else:
+        # Otherwise, only allow user to download their own donation receipts
+        donation = get_object_or_404(FoodDonation, id=donation_id, donor=request.user)
+    
+    # Create a file-like buffer to receive PDF data
+    buffer = io.BytesIO()
+    
+    # Create the PDF object using ReportLab
+    pdf = SimpleDocTemplate(buffer, pagesize=letter)
+    styles = getSampleStyleSheet()
+    elements = []
+    
+    # Add the receipt header
+    elements.append(Paragraph("Beyond Hunger - Donation Receipt", styles['Title']))
+    elements.append(Spacer(1, 20))
+    
+    # Add receipt details
+    elements.append(Paragraph(f"Receipt #: {donation.id}", styles['Heading2']))
+    elements.append(Paragraph(f"Date: {donation.created_at.strftime('%B %d, %Y')}", styles['Normal']))
+    elements.append(Spacer(1, 20))
+    
+    # Add donor information
+    elements.append(Paragraph("Donor Information:", styles['Heading3']))
+    elements.append(Paragraph(f"Name: {donation.donor.get_full_name() or donation.donor.username}", styles['Normal']))
+    try:
+        profile = donation.donor.userprofile
+        elements.append(Paragraph(f"Phone: {profile.phone}", styles['Normal']))
+        elements.append(Paragraph(f"Address: {profile.address}", styles['Normal']))
+    except:
+        pass
+    elements.append(Spacer(1, 20))
+    
+    # Add donation details
+    elements.append(Paragraph("Donation Details:", styles['Heading3']))
+    
+    data = [
+        ['Food Type', 'Quantity', 'Expiry Date', 'Status'],
+        [donation.food_type, donation.quantity, donation.expiry_date.strftime('%B %d, %Y'), donation.get_status_display()]
+    ]
+    
+    # If there's payment info, add it
+    if donation.amount:
+        elements.append(Paragraph(f"Amount: ${donation.amount}", styles['Normal']))
+        elements.append(Paragraph(f"Payment Method: {donation.get_payment_method_display()}", styles['Normal']))
+        elements.append(Paragraph(f"Transaction ID: {donation.transaction_id}", styles['Normal']))
+    
+    # Create the table
+    table = Table(data)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgreen),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    
+    elements.append(table)
+    elements.append(Spacer(1, 20))
+    
+    # Add pick-up information
+    elements.append(Paragraph("Pick-up Information:", styles['Heading3']))
+    elements.append(Paragraph(f"Address: {donation.pickup_address}", styles['Normal']))
+    elements.append(Paragraph(f"Date: {donation.pickup_date.strftime('%B %d, %Y')}", styles['Normal']))
+    
+    if donation.notes:
+        elements.append(Spacer(1, 10))
+        elements.append(Paragraph("Notes:", styles['Heading3']))
+        elements.append(Paragraph(donation.notes, styles['Normal']))
+    
+    # Add thank you message
+    elements.append(Spacer(1, 30))
+    elements.append(Paragraph("Thank you for your generous donation to Beyond Hunger!", styles['Heading3']))
+    elements.append(Paragraph("Your contribution helps us fight hunger in our community.", styles['Normal']))
+    
+    # Build the PDF
+    pdf.build(elements)
+    
+    # Get the value of the buffer
+    pdf_value = buffer.getvalue()
+    buffer.close()
+    
+    # Create the HTTP response
+    response = HttpResponse(pdf_value, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="donation_receipt_{donation.id}.pdf"'
+    
+    return response
+
+@login_required
+def update_profile_photo(request):
+    """View for updating user profile photo with validation"""
+    if request.method == 'POST' and request.FILES.get('profile_photo'):
+        profile = request.user.userprofile
+        
+        # Get the uploaded file
+        photo = request.FILES['profile_photo']
+        
+        # Validate file size (max 5MB)
+        if photo.size > 5 * 1024 * 1024:
+            messages.error(request, "Profile photo must be less than 5MB")
+            return redirect('food_donation:profile')
+        
+        # Validate file type
+        if not photo.name.lower().endswith(('.jpg', '.jpeg', '.png')):
+            messages.error(request, "Profile photo must be a JPG or PNG image")
+            return redirect('food_donation:profile')
+        
+        try:
+            # Additional validation for proper profile photo
+            # Open the image
+            img = Image.open(photo)
+            
+            # Check dimensions - profile photos should be reasonably square
+            width, height = img.size
+            aspect_ratio = width / height
+            
+            if aspect_ratio < 0.7 or aspect_ratio > 1.5:
+                messages.error(request, "Photo must be reasonably square (like a portrait). Please crop your image appropriately.")
+                return redirect('food_donation:profile')
+            
+            # Check minimum size
+            if width < 200 or height < 200:
+                messages.error(request, "Profile photo must be at least 200x200 pixels")
+                return redirect('food_donation:profile')
+            
+            # Optional: Use face detection if you have additional libraries
+            # This is a simple message - proper face detection would require
+            # libraries like opencv-python or face_recognition
+            messages.info(request, "Please ensure your photo shows your face clearly for identification purposes.")
+            
+            # Save the profile photo
+            profile.profile_photo = photo
+            profile.save()
+            
+            messages.success(request, "Profile photo updated successfully")
+        except Exception as e:
+            messages.error(request, f"Error processing image: {str(e)}")
+        
+        return redirect('food_donation:profile')
+    
+    return redirect('food_donation:profile')
+
+@login_required
+def notifications(request):
+    """View for user to see their notifications"""
+    # Get all notifications for the user
+    user_notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
+    
+    # Mark all as read
+    user_notifications.filter(is_read=False).update(is_read=True)
+    
+    context = {
+        'notifications': user_notifications,
+    }
+    
+    return render(request, 'food_donation/notifications.html', context)
+
+@login_required
+def delete_conversation(request, item_pk, user_pk):
+    """Delete an entire conversation about an item with a specific user"""
+    if request.method == 'POST':
+        item = get_object_or_404(MarketplaceItem, pk=item_pk)
+        other_user = get_object_or_404(User, pk=user_pk)
+        
+        # Delete messages where current user is sender or receiver
+        MarketplaceChat.objects.filter(
+            item=item,
+            sender=request.user,
+            receiver=other_user
+        ).delete()
+        
+        MarketplaceChat.objects.filter(
+            item=item,
+            sender=other_user,
+            receiver=request.user
+        ).delete()
+        
+        messages.success(request, 'Conversation deleted successfully.')
+    
+    return redirect('food_donation:view_messages')
+
+@login_required
+def delete_message(request, message_id):
+    """Delete a specific message"""
+    if request.method == 'POST':
+        message = get_object_or_404(MarketplaceChat, pk=message_id)
+        
+        # Only allow users to delete messages they sent
+        if message.sender == request.user:
+            item_pk = message.item.pk
+            user_pk = message.receiver.pk if message.receiver != request.user else message.sender.pk
+            
+            message.delete()
+            messages.success(request, 'Message deleted successfully.')
+            
+            # Return to the conversation
+            return redirect('food_donation:view_conversation', item_pk=item_pk, user_pk=user_pk)
+        else:
+            messages.error(request, 'You can only delete messages you sent.')
+    
+    return redirect('food_donation:view_messages')
+
+@login_required
+def delete_notification(request, notification_id):
+    """Delete a specific notification"""
+    if request.method == 'POST':
+        notification = get_object_or_404(Notification, pk=notification_id, user=request.user)
+        notification.delete()
+        messages.success(request, 'Notification deleted successfully.')
+    
+    return redirect('food_donation:notifications')
+
+@login_required
+def mark_notification_read(request, notification_id):
+    """Mark a specific notification as read"""
+    notification = get_object_or_404(Notification, pk=notification_id, user=request.user)
+    notification.is_read = True
+    notification.save()
+    
+    if notification.type == 'message' and notification.related_chat:
+        # Redirect to the conversation if it's a message notification
+        return redirect('food_donation:view_conversation', 
+                         item_pk=notification.related_chat.item.pk,
+                         user_pk=notification.related_chat.sender.pk)
+    
+    return redirect('food_donation:notifications')
+
+@login_required
+def send_message(request, item_pk):
+    """Send a message to the seller or bidder of a marketplace item"""
+    item = get_object_or_404(MarketplaceItem, pk=item_pk)
+    
+    if request.method == 'POST':
+        message_text = request.POST.get('message')
+        receiver_id = request.POST.get('receiver')
+        include_phone = 'include_phone' in request.POST
+        
+        if not message_text:
+            messages.error(request, 'Message cannot be empty.')
+            return redirect('food_donation:marketplace_item_detail', pk=item_pk)
+        
+        try:
+            receiver = User.objects.get(id=receiver_id)
+            
+            # Handle file upload if present
+            media_file = None
+            if 'message_media' in request.FILES:
+                media_file = request.FILES['message_media']
+            
+            # Create the message
+            chat = MarketplaceChat.objects.create(
+                item=item,
+                sender=request.user,
+                receiver=receiver,
+                message=message_text,
+                include_phone=include_phone,
+                media_file=media_file
+            )
+            
+            # Create notification for receiver
+            notification = Notification.objects.create(
+                user=receiver,
+                type='message',
+                title=f'New message about {item.title}',
+                message=f'{request.user.username} sent you a message about your listing "{item.title}"',
+                related_item=item,
+                related_chat=chat
+            )
+            
+            # Send email notification if user has email
+            if receiver.email:
+                try:
+                    from django.core.mail import send_mail
+                    
+                    # Get the sender's phone if they chose to include it
+                    sender_phone = ''
+                    if include_phone:
+                        try:
+                            profile = UserProfile.objects.get(user=request.user)
+                            sender_phone = f"\nPhone: {profile.phone}"
+                        except:
+                            pass
+                    
+                    # Note if the message includes media
+                    media_note = ''
+                    if media_file:
+                        media_note = "\n* This message includes media attachment."
+                    
+                    subject = f'New message about {item.title}'
+                    from_email = 'Beyond Hunger <beyoundhunger1@gmail.com>'
+                    message_body = f"""
+                    You have received a new message:
+                    
+                    Item: {item.title}
+                    From: {request.user.username}
+                    Message: {message_text}
+                    {sender_phone}
+                    {media_note}
+                    
+                    Log in to your account to view and respond to this message.
+                    """
+                    
+                    send_mail(subject, message_body, from_email, [receiver.email])
+                except Exception as e:
+                    print(f"Error sending message notification email: {str(e)}")
+            
+            messages.success(request, 'Your message has been sent.')
+            
+            # If the user sent the message from the conversation view, redirect back there
+            referrer = request.META.get('HTTP_REFERER', '')
+            if 'messages/' in referrer and str(item_pk) in referrer:
+                return redirect('food_donation:view_conversation', item_pk=item_pk, user_pk=receiver.id)
+                
+        except User.DoesNotExist:
+            messages.error(request, 'Recipient not found.')
+        
+        return redirect('food_donation:marketplace_item_detail', pk=item_pk)
+    
+    return redirect('food_donation:marketplace_item_detail', pk=item_pk)
+
+@login_required
+def view_messages(request):
+    """View for user to see their marketplace messages"""
+    # Get received messages
+    received_messages = MarketplaceChat.objects.filter(receiver=request.user).order_by('-created_at')
+    
+    # Get sent messages
+    sent_messages = MarketplaceChat.objects.filter(sender=request.user).order_by('-created_at')
+    
+    # Create conversation groups
+    conversations = {}
+    
+    # Process received messages
+    for msg in received_messages:
+        key = f"{msg.item.id}_{msg.sender.id}"
+        if key not in conversations:
+            conversations[key] = {
+                'item': msg.item,
+                'other_user': msg.sender,
+                'messages': [],
+                'latest_message_date': msg.created_at
+            }
+        conversations[key]['messages'].append(msg)
+        if msg.created_at > conversations[key]['latest_message_date']:
+            conversations[key]['latest_message_date'] = msg.created_at
+    
+    # Process sent messages
+    for msg in sent_messages:
+        key = f"{msg.item.id}_{msg.receiver.id}"
+        if key not in conversations:
+            conversations[key] = {
+                'item': msg.item,
+                'other_user': msg.receiver,
+                'messages': [],
+                'latest_message_date': msg.created_at
+            }
+        conversations[key]['messages'].append(msg)
+        if msg.created_at > conversations[key]['latest_message_date']:
+            conversations[key]['latest_message_date'] = msg.created_at
+    
+    # Sort conversations by latest message date
+    sorted_conversations = sorted(
+        conversations.values(),
+        key=lambda x: x['latest_message_date'],
+        reverse=True
+    )
+    
+    # Mark messages as read
+    received_messages.filter(is_read=False).update(is_read=True)
+    
+    # Also mark related notifications as read
+    Notification.objects.filter(
+        user=request.user,
+        type='message',
+        is_read=False,
+        related_chat__in=received_messages
+    ).update(is_read=True)
+    
+    context = {
+        'conversations': sorted_conversations,
+    }
+    
+    return render(request, 'food_donation/marketplace_messages.html', context)
+
+@login_required
+def view_conversation(request, item_pk, user_pk):
+    """View a specific conversation with a user about an item"""
+    item = get_object_or_404(MarketplaceItem, pk=item_pk)
+    other_user = get_object_or_404(User, pk=user_pk)
+    
+    # Get all messages between the current user and the other user about this item
+    messages_received = MarketplaceChat.objects.filter(
+        item=item,
+        sender=other_user,
+        receiver=request.user
+    ).order_by('created_at')
+    
+    messages_sent = MarketplaceChat.objects.filter(
+        item=item,
+        sender=request.user,
+        receiver=other_user
+    ).order_by('created_at')
+    
+    # Combine and sort by creation date
+    all_messages = sorted(
+        list(messages_received) + list(messages_sent),
+        key=lambda x: x.created_at
+    )
+    
+    # Mark received messages as read
+    messages_received.filter(is_read=False).update(is_read=True)
+    
+    # Also mark related notifications as read
+    Notification.objects.filter(
+        user=request.user,
+        type='message',
+        is_read=False,
+        related_chat__in=messages_received
+    ).update(is_read=True)
+    
+    # Check if user is seller or potential buyer
+    is_seller = (request.user == item.seller)
+    
+    # Get other user's profile for contact info
+    try:
+        other_profile = UserProfile.objects.get(user=other_user)
+    except UserProfile.DoesNotExist:
+        other_profile = None
+    
+    context = {
+        'item': item,
+        'other_user': other_user,
+        'other_profile': other_profile,
+        'messages': all_messages,
+        'is_seller': is_seller,
+    }
+    
+    return render(request, 'food_donation/marketplace_conversation.html', context)
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def admin_send_notification(request):
+    """Admin view to send a notification to users"""
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        message = request.POST.get('message')
+        recipient_type = request.POST.get('recipient_type')
+        specific_user_id = request.POST.get('specific_user')
+        
+        if not title or not message:
+            messages.error(request, 'Title and message are required.')
+            return redirect('food_donation:admin_send_notification')
+        
+        # Determine recipients
+        if recipient_type == 'all':
+            recipients = User.objects.all()
+        elif recipient_type == 'donors':
+            recipients = User.objects.filter(userprofile__is_donor=True)
+        elif recipient_type == 'volunteers':
+            recipients = User.objects.filter(userprofile__is_volunteer=True)
+        elif recipient_type == 'marketplace':
+            recipients = MarketplaceLister.objects.filter(status='approved').values_list('user', flat=True)
+            recipients = User.objects.filter(id__in=recipients)
+        elif recipient_type == 'specific' and specific_user_id:
+            try:
+                recipients = [User.objects.get(id=specific_user_id)]
+            except User.DoesNotExist:
+                messages.error(request, 'User not found.')
+                recipients = []
+        else:
+            messages.error(request, 'Invalid recipient type.')
+            return redirect('food_donation:admin_send_notification')
+        
+        # Create notifications for all recipients
+        for user in recipients:
+            Notification.objects.create(
+                user=user,
+                type='admin',
+                title=title,
+                message=message
+            )
+        
+        messages.success(request, f'Notification sent to {len(recipients)} users.')
+        return redirect('food_donation:admin_dashboard')
+    
+    # Get all users for the dropdown
+    users = User.objects.all().order_by('username')
+    
+    context = {
+        'users': users
+    }
+    
+    return render(request, 'food_donation/admin_send_notification.html', context)
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def download_delivered_donations_csv(request):
+    """Generate and download a CSV file with all delivered donations for admin users"""
+    # Ensure it's a superuser
+    if not request.user.is_superuser:
+        messages.error(request, "You don't have permission to access this feature.")
+        return redirect('food_donation:admin_dashboard')
+    
+    # Get all delivered donations
+    delivered_donations = FoodDonation.objects.filter(status='delivered')
+    
+    # Create a response with CSV content type
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="delivered_donations.csv"'
+    
+    # Create CSV writer
+    writer = csv.writer(response)
+    
+    # Write header row
+    writer.writerow([
+        'Donation ID', 
+        'Donor', 
+        'Email',
+        'Phone',
+        'Food Type', 
+        'Quantity', 
+        'Expiry Date',
+        'Pickup Address',
+        'Pickup Date', 
+        'Status',
+        'Payment Method',
+        'Amount',
+        'Transaction ID',
+        'Payment Status',
+        'Creation Date',
+        'Notes'
+    ])
+    
+    # Write data rows
+    for donation in delivered_donations:
+        try:
+            profile = donation.donor.userprofile
+            phone = profile.phone
+        except:
+            phone = "Not available"
+            
+        writer.writerow([
+            donation.id,
+            donation.donor.get_full_name() or donation.donor.username,
+            donation.donor.email,
+            phone,
+            donation.food_type,
+            donation.quantity,
+            donation.expiry_date.strftime('%Y-%m-%d'),
+            donation.pickup_address,
+            donation.pickup_date.strftime('%Y-%m-%d'),
+            donation.get_status_display(),
+            donation.get_payment_method_display() if donation.payment_method else 'None',
+            donation.amount if donation.amount else 'None',
+            donation.transaction_id if donation.transaction_id else 'None',
+            donation.get_payment_status_display(),
+            donation.created_at.strftime('%Y-%m-%d %H:%M'),
+            donation.notes
+        ])
+    
+    return response
+
+@login_required
+def money_donation_history(request):
+    """View for user to see their money donation history"""
+    # Get all money donations for the current user
+    user_donations = MoneyDonation.objects.filter(donor=request.user).order_by('-created_at')
+    
+    context = {
+        'money_donations': user_donations,
+        'total_amount': sum(donation.amount for donation in user_donations)
+    }
+    
+    return render(request, 'food_donation/money_donation_history.html', context)
+
+def donate_money(request):
     if request.method == 'POST':
         amount = request.POST.get('amount')
-        if amount:
-            money_donation = MoneyDonation.objects.create(
-                donor=request.user,
-                amount=float(amount),
-                is_acknowledged=True
-            )
-            # Send email confirmation if email is configured
+        payment_method = request.POST.get('payment_method')
+        transaction_id = request.POST.get('transaction_id', '')
+        
+        if amount and payment_method:
             try:
-                send_money_donation_confirmation(request.user, money_donation)
-            except:
-                pass  # Handle silently if email sending fails
-            messages.success(request, "Thank you for your donation! It has been recorded.")
-        return redirect('food_donation:profile')
-    return redirect('food_donation:money_donate')
-
-def send_money_donation_confirmation(user, donation):
-    subject = 'Thank you for your monetary donation'
-    from_email = 'Beyond Hunger <beyoundhunger1@gmail.com>'
-    to = user.email
-    
-    # Prepare HTML message
-    html_content = f"""
-    <html>
-    <head>
-        <title>Donation Confirmation</title>
-    </head>
-    <body>
-        <h1>Thank you for your donation!</h1>
-        <p>Dear {user.first_name or user.username},</p>
-        <p>We have received your monetary donation of ${donation.amount}.</p>
-        <p>Your contribution will help us fight hunger in our community.</p>
-        <p>Thank you for supporting Beyond Hunger!</p>
-    </body>
-    </html>
-    """
-    text_content = f"Thank you for your donation of ${donation.amount}. Your contribution will help us fight hunger in our community."
-    
-    # Create email
-    email = EmailMultiAlternatives(subject, text_content, from_email, [to])
-    email.attach_alternative(html_content, "text/html")
-    email.send()
-    return True
+                amount = float(amount)
+                donation = MoneyDonation.objects.create(
+                    donor=request.user,
+                    amount=amount,
+                    payment_method=payment_method,
+                    transaction_id=transaction_id
+                )
+                
+                # Send confirmation email
+                if request.user.email:
+                    send_money_donation_confirmation(request.user, donation)
+                
+                messages.success(request, 'Thank you for your donation! We have sent a confirmation to your email.')
+                return redirect('profile')
+            except ValueError:
+                messages.error(request, 'Please enter a valid amount.')
+        else:
+            messages.error(request, 'Please provide both amount and payment method.')
+            
+    return redirect('profile')

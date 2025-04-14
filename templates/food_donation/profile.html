@@ -12,8 +12,15 @@
             <div class="card-body">
                 <div class="row mb-5">
                     <div class="col-md-4 text-center">
-                        <div class="rounded-circle bg-light mx-auto mb-3 d-flex align-items-center justify-content-center hover-scale" style="width: 150px; height: 150px;">
-                            <i class="fas fa-user fa-5x text-primary"></i>
+                        <div class="rounded-circle bg-light mx-auto mb-3 d-flex align-items-center justify-content-center hover-scale position-relative" style="width: 150px; height: 150px; overflow: hidden;">
+                            {% if user_profile.get_profile_photo_url %}
+                                <img src="{{ user_profile.get_profile_photo_url }}" alt="{{ user_profile.user.username }}'s Profile Picture" class="w-100 h-100" style="object-fit: cover;">
+                            {% else %}
+                                <i class="fas fa-user fa-5x text-primary"></i>
+                            {% endif %}
+                            <a href="#" class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-2" data-bs-toggle="modal" data-bs-target="#photoModal" title="Change photo">
+                                <i class="fas fa-camera"></i>
+                            </a>
                         </div>
                         <h3>{{ user_profile.user.username }}</h3>
                         <p class="text-muted">Member since {{ user_profile.user.date_joined|date:"M d, Y" }}</p>
@@ -105,43 +112,44 @@
                 <!-- My Donations Section -->
                 {% if user_profile.is_donor and food_donations %}
                 <h3 class="mb-4"><i class="fas fa-hand-holding-heart me-2 text-primary"></i>My Donations</h3>
-                <div class="table-responsive mb-5">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Food Type</th>
-                                <th>Quantity</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for donation in food_donations %}
-                            <tr>
-                                <td>{{ donation.created_at|date:"M d, Y" }}</td>
-                                <td>{{ donation.food_type }}</td>
-                                <td>{{ donation.quantity }}</td>
-                                <td>
-                                    {% if donation.status == 'pending' %}
-                                    <span class="badge bg-warning">Pending</span>
-                                    {% elif donation.status == 'accepted' %}
-                                    <span class="badge bg-info">Accepted</span>
-                                    {% elif donation.status == 'in_transit' %}
-                                    <span class="badge bg-primary">In Transit</span>
-                                    {% elif donation.status == 'delivered' %}
-                                    <span class="badge bg-success">Delivered</span>
-                                    {% elif donation.status == 'cancelled' %}
-                                    <span class="badge bg-danger">Cancelled</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary">Details</button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Your Food Donations</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Food Type</th>
+                                        <th>Quantity</th>
+                                        <th>Pickup Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for donation in food_donations %}
+                                    <tr>
+                                        <td>{{ donation.food_type }}</td>
+                                        <td>{{ donation.quantity }}</td>
+                                        <td>{{ donation.pickup_date }}</td>
+                                        <td>
+                                            <span class="badge {% if donation.status == 'pending' %}bg-warning{% elif donation.status == 'accepted' %}bg-info{% elif donation.status == 'in_transit' %}bg-primary{% elif donation.status == 'delivered' %}bg-success{% else %}bg-danger{% endif %}">
+                                                {{ donation.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'food_donation:download_donation_receipt' donation.id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-file-download"></i> Receipt
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
                 {% elif user_profile.is_donor %}
                 <div class="card mb-5 hover-lift">
@@ -165,6 +173,8 @@
                                     <tr>
                                         <th>Date</th>
                                         <th>Amount</th>
+                                        <th>Payment Method</th>
+                                        <th>Transaction ID</th>
                                         <th>Status</th>
                                     </tr>
                                 </thead>
@@ -173,6 +183,18 @@
                                     <tr>
                                         <td>{{ donation.created_at|date:"M d, Y" }}</td>
                                         <td>${{ donation.amount }}</td>
+                                        <td>
+                                            {% if donation.payment_method == 'upi' %}
+                                                UPI
+                                            {% elif donation.payment_method == 'bank_transfer' %}
+                                                Bank Transfer
+                                            {% elif donation.payment_method == 'cash' %}
+                                                Cash
+                                            {% else %}
+                                                {{ donation.payment_method|default:"Other" }}
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ donation.transaction_id|default:"-" }}</td>
                                         <td>
                                             {% if donation.is_acknowledged %}
                                             <span class="badge bg-success">Acknowledged</span>
@@ -196,14 +218,28 @@
                         <h5>I've Made a Donation</h5>
                     </div>
                     <div class="card-body">
+                        <div id="donation-response-message"></div>
                         <p>If you've completed your donation, let us know so we can acknowledge your contribution.</p>
-                        <form method="post" action="{% url 'food_donation:confirm_money_donation' %}">
+                        <form id="money-donation-form">
                             {% csrf_token %}
                             <div class="mb-3">
                                 <label for="amount" class="form-label">Amount Donated ($)</label>
                                 <input type="number" class="form-control" id="amount" name="amount" min="1" step="0.01" required>
                             </div>
-                            <button type="submit" class="btn btn-primary">Confirm Donation</button>
+                            <div class="mb-3">
+                                <label for="transaction_id" class="form-label">Transaction ID (if available)</label>
+                                <input type="text" class="form-control" id="transaction_id" name="transaction_id" placeholder="e.g., UPI reference, bank transfer ID">
+                            </div>
+                            <div class="mb-3">
+                                <label for="payment_method" class="form-label">Payment Method</label>
+                                <select class="form-select" id="payment_method" name="payment_method">
+                                    <option value="upi">UPI</option>
+                                    <option value="bank_transfer">Bank Transfer</option>
+                                    <option value="cash">Cash</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary" id="submit-donation-btn">Confirm Donation</button>
                         </form>
                     </div>
                 </div>
@@ -263,6 +299,175 @@
         </div>
     </div>
 </div>
+
+<!-- Profile Photo Modal -->
+<div class="modal fade" id="photoModal" tabindex="-1" aria-labelledby="photoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="photoModalLabel">Update Profile Photo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{% url 'food_donation:update_profile_photo' %}" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <!-- Profile photo guidelines -->
+                    <div class="alert alert-info mb-3">
+                        <h6 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Profile Photo Requirements</h6>
+                        <ul class="mb-0 small">
+                            <li>Your photo must clearly show your face</li>
+                            <li>Portrait-style photos only (no group photos)</li>
+                            <li>No inappropriate or non-personal images</li>
+                            <li>File must be JPG or PNG format</li>
+                            <li>Maximum file size: 5MB</li>
+                            <li>Minimum dimensions: 200x200 pixels</li>
+                        </ul>
+                        <p class="mt-2 mb-0 small">Your profile photo will be used for identification purposes within our community.</p>
+                    </div>
+                    
+                    <!-- Option to use Google photo if available -->
+                    {% if user.socialaccount_set.exists %}
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="use_google_photo" name="use_google_photo" {% if not user_profile.profile_photo %}checked{% endif %}>
+                            <label class="form-check-label" for="use_google_photo">
+                                Use my Google profile picture
+                            </label>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Custom photo upload -->
+                    <div id="upload-section" {% if user.socialaccount_set.exists and not user_profile.profile_photo %}style="display: none;"{% endif %}>
+                        <div class="mb-3">
+                            <label for="profile_photo" class="form-label">Upload new photo</label>
+                            <input type="file" class="form-control" id="profile_photo" name="profile_photo" accept="image/jpeg,image/png">
+                            <div class="form-text">Please upload a clear photo of your face for identification purposes.</div>
+                        </div>
+                        
+                        <!-- Preview -->
+                        <div class="text-center mb-3">
+                            <div id="preview-container" style="width: 150px; height: 150px; margin: 0 auto; display: none;" class="rounded-circle overflow-hidden">
+                                <img id="image-preview" src="#" alt="Preview" class="w-100 h-100" style="object-fit: cover;">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle profile photo preview
+        const photoInput = document.getElementById('profile_photo');
+        const preview = document.getElementById('image-preview');
+        const previewContainer = document.getElementById('preview-container');
+        
+        if (photoInput) {
+            photoInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        preview.src = e.target.result;
+                        previewContainer.style.display = 'block';
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+        
+        // Toggle upload section based on Google photo checkbox
+        const googleCheckbox = document.getElementById('use_google_photo');
+        const uploadSection = document.getElementById('upload-section');
+        
+        if (googleCheckbox && uploadSection) {
+            googleCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    uploadSection.style.display = 'none';
+                } else {
+                    uploadSection.style.display = 'block';
+                }
+            });
+        }
+    });
+    
+    // Handle money donation form submission with AJAX
+    document.addEventListener('DOMContentLoaded', function() {
+        const donationForm = document.getElementById('money-donation-form');
+        const responseMessage = document.getElementById('donation-response-message');
+        
+        if (donationForm) {
+            donationForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const submitBtn = document.getElementById('submit-donation-btn');
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+                submitBtn.disabled = true;
+                
+                const formData = new FormData(donationForm);
+                
+                fetch('{% url "food_donation:confirm_money_donation" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    responseMessage.innerHTML = '';
+                    
+                    if (data.status === 'success') {
+                        // Show success message
+                        responseMessage.innerHTML = `
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="fas fa-check-circle me-2"></i>${data.message}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        `;
+                        // Reset form
+                        donationForm.reset();
+                        
+                        // Reload the money donations section after a short delay
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 3000);
+                    } else {
+                        // Show error message
+                        responseMessage.innerHTML = `
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="fas fa-exclamation-circle me-2"></i>${data.message}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    responseMessage.innerHTML = `
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i>An error occurred while processing your donation. Please try again.
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    `;
+                    console.error('Error:', error);
+                })
+                .finally(() => {
+                    submitBtn.innerHTML = 'Confirm Donation';
+                    submitBtn.disabled = false;
+                });
+            });
+        }
+    });
+</script>
 
 <style>
     .hover-highlight:hover {

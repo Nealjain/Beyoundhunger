@@ -552,18 +552,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/about/' %}active{% endif %}" href="{% url 'food_donation:about' %}">
-                            <i class="fas fa-info-circle me-1"></i>About
-                        </a>
-                    </li>
-                    <li class="nav-item">
                         <a class="nav-link {% if '/marketplace/' in request.path %}active{% endif %}" href="{% url 'food_donation:marketplace' %}">
                             <i class="fas fa-store me-1"></i>Marketplace
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/contact/' %}active{% endif %}" href="{% url 'food_donation:contact' %}">
-                            <i class="fas fa-envelope me-1"></i>Contact
                         </a>
                     </li>
                 </ul>
@@ -576,11 +566,41 @@
                             </a>
                         </li>
                         {% endif %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'food_donation:profile' %}">Profile</a>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-bell me-1"></i>Notifications/Messages
+                                {% if unread_notifications > 0 or unread_messages > 0 %}
+                                <span class="badge rounded-pill bg-danger">{{ unread_notifications|add:unread_messages }}</span>
+                                {% endif %}
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="notificationsDropdown">
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'food_donation:notifications' %}">
+                                        <i class="fas fa-bell me-1"></i>Notifications
+                                        {% if unread_notifications > 0 %}
+                                        <span class="badge rounded-pill bg-danger">{{ unread_notifications }}</span>
+                                        {% endif %}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'food_donation:view_messages' %}">
+                                        <i class="fas fa-envelope me-1"></i>Messages
+                                        {% if unread_messages > 0 %}
+                                        <span class="badge rounded-pill bg-danger">{{ unread_messages }}</span>
+                                        {% endif %}
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'food_donation:logout' %}">Logout</a>
+                            <a class="nav-link" href="{% url 'food_donation:profile' %}">
+                                <i class="fas fa-user me-1"></i>Profile
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'food_donation:logout' %}">
+                                <i class="fas fa-sign-out-alt me-1"></i>Logout
+                            </a>
                         </li>
                     {% else %}
                         <li class="nav-item">

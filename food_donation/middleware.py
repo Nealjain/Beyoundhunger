@@ -2,7 +2,7 @@ import re
 import logging
 from django.conf import settings
 from django.shortcuts import redirect
-from django.urls import reverse
+from django.urls import reverse, resolve
 from django.contrib.auth.views import redirect_to_login
 from django.http import HttpResponseRedirect
 
@@ -72,4 +72,28 @@ class DeploymentDebugMiddleware:
             if response.status_code in (301, 302):
                 logger.debug(f"Redirect location: {response.get('Location', 'Not found')}")
         
+        return response 
+
+
+class SocialAuthProfileCompletionMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+        
+    def __call__(self, request):
+        # Process request - check if user needs to complete profile
+        if request.user.is_authenticated and request.session.get('needs_profile_completion', False):
+            # Get the current path
+            current_url = resolve(request.path_info).url_name
+            
+            # Define exempt paths that don't redirect (including the completion page itself)
+            exempt_paths = ['complete_profile', 'logout', 'static', 'media', 'admin', 'api']
+            
+            # Check if current path is exempt
+            is_exempt = any(path in request.path_info for path in exempt_paths)
+            
+            # If not exempt, redirect to complete profile
+            if not is_exempt and current_url != 'complete_profile':
+                return redirect('food_donation:complete_profile')
+        
+        response = self.get_response(request)
         return response 

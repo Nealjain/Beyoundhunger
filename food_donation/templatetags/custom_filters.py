@@ -16,4 +16,14 @@ def filter_active_assignments(assignments, volunteer_id):
     for assignment in assignments:
         if assignment.volunteer.id == volunteer_id and assignment.status in ['assigned', 'picked_up']:
             active_count += 1
-    return active_count 
+    return active_count
+
+@register.filter
+def get_item(dictionary, key):
+    """
+    Get an item from a dictionary using its key.
+    
+    Usage:
+    {{ my_dict|get_item:my_key }}
+    """
+    return dictionary.get(key) 

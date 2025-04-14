@@ -67,27 +67,48 @@
                     <p class="mb-0">All donations to Beyond Hunger are eligible for tax deduction under Section 80G. Please provide your PAN details after making a donation to receive the tax benefit certificate.</p>
                 </div>
                 
-                <div class="alert alert-success mt-4 donation-confirmation-form">
-                    <h5><i class="fas fa-check-circle me-2"></i>I've Made a Donation</h5>
-                    <p>If you've completed your donation, let us know so we can acknowledge your contribution.</p>
-                    <form class="mt-3">
+                <div class="card p-3 donation-confirmation-form mt-4">
+                    <h5 class="text-center mb-3"><i class="fas fa-check-circle text-success me-2"></i>Confirm Your Donation</h5>
+                    {% if user.is_authenticated %}
+                    <div id="donation-response-message"></div>
+                    <form id="money-donation-form">
+                        {% csrf_token %}
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <input type="text" class="form-control" placeholder="Transaction ID (if available)">
+                                <label for="transaction_id" class="form-label">Transaction ID (if available)</label>
+                                <input type="text" class="form-control" id="transaction_id" name="transaction_id" placeholder="e.g., UPI reference">
                             </div>
                             <div class="col-md-6">
-                                <input type="number" class="form-control" placeholder="Amount Donated (₹)">
+                                <label for="amount" class="form-label">Amount Donated ($)</label>
+                                <input type="number" class="form-control" id="amount" name="amount" min="1" step="0.01" required>
+                            </div>
+                            <div class="col-md-12">
+                                <label for="payment_method" class="form-label">Payment Method</label>
+                                <select class="form-select" id="payment_method" name="payment_method">
+                                    <option value="upi">UPI</option>
+                                    <option value="bank_transfer">Bank Transfer</option>
+                                    <option value="cash">Cash</option>
+                                    <option value="other">Other</option>
+                                </select>
                             </div>
                             <div class="col-12">
-                                <textarea class="form-control" rows="2" placeholder="Any message (optional)"></textarea>
+                                <textarea class="form-control" rows="2" name="notes" placeholder="Any message (optional)"></textarea>
                             </div>
                             <div class="col-12 text-center">
-                                <button type="submit" class="btn btn-success">
+                                <button type="submit" class="btn btn-success" id="submit-donation-btn">
                                     <i class="fas fa-paper-plane me-2"></i>Submit Confirmation
                                 </button>
                             </div>
                         </div>
                     </form>
+                    {% else %}
+                    <div class="text-center p-3">
+                        <p>You need to be logged in to confirm a donation.</p>
+                        <a href="{% url 'food_donation:login' %}?next={% url 'food_donation:money_donate' %}" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login to Continue
+                        </a>
+                    </div>
+                    {% endif %}
                 </div>
                 
                 <div class="text-center mt-4">
@@ -181,4 +202,75 @@
         box-shadow: 0 3px 6px rgba(0,0,0,0.1);
     }
 </style>
+
+<script>
+    // Handle money donation form submission with AJAX
+    document.addEventListener('DOMContentLoaded', function() {
+        const donationForm = document.getElementById('money-donation-form');
+        const responseMessage = document.getElementById('donation-response-message');
+        
+        if (donationForm) {
+            donationForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const submitBtn = document.getElementById('submit-donation-btn');
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+                submitBtn.disabled = true;
+                
+                const formData = new FormData(donationForm);
+                
+                fetch('{% url "food_donation:confirm_money_donation" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    responseMessage.innerHTML = '';
+                    
+                    if (data.status === 'success') {
+                        // Show success message
+                        responseMessage.innerHTML = `
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="fas fa-check-circle me-2"></i>${data.message}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        `;
+                        // Reset form
+                        donationForm.reset();
+                        
+                        // Redirect to profile page after a short delay
+                        setTimeout(() => {
+                            window.location.href = '{% url "food_donation:profile" %}';
+                        }, 3000);
+                    } else {
+                        // Show error message
+                        responseMessage.innerHTML = `
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="fas fa-exclamation-circle me-2"></i>${data.message}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    responseMessage.innerHTML = `
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i>An error occurred while processing your donation. Please try again.
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    `;
+                    console.error('Error:', error);
+                })
+                .finally(() => {
+                    submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Submit Confirmation';
+                    submitBtn.disabled = false;
+                });
+            });
+        }
+    });
+</script>
 {% endblock %} 

@@ -358,8 +358,41 @@ def chatbot_api(request):
         message = message.lower().strip()
         message = re.sub(r'[^\w\s]', '', message)  # Remove punctuation
         
+        # Add some built-in responses for common questions if database is empty
+        built_in_responses = {
+            'donate': "You can donate food by clicking on the 'Donate Food' link in the navigation menu. For monetary donations, visit the 'Donate Money' page.",
+            'volunteer': "To become a volunteer, please register an account and check the volunteer option during signup.",
+            'contact': "You can contact us through our contact form on the 'Contact' page or email us at beyoundhunger1@gmail.com.",
+            'hello': "Hello! I'm Mr.Jain from Beyond Hunger. How can I assist you today?",
+            'hi': "Hi there! How can I help you with Beyond Hunger's services today?",
+            'thank': "You're welcome! Thank you for supporting Beyond Hunger.",
+            'marketplace': "Our marketplace allows approved users to list food items for donation or sale. Visit the Marketplace section to browse available items.",
+            'help': "I can help you with information about food donations, money donations, volunteering, the marketplace, and more. What would you like to know?",
+            'register': "You can register for an account by clicking the 'Register' link in the navigation menu.",
+            'login': "You can log in by clicking the 'Login' link in the navigation menu."
+        }
+        
         # Get all active chatbot responses
         all_responses = ChatbotResponse.objects.filter(is_active=True)
+        
+        # If no database responses, use built-in ones
+        if not all_responses.exists():
+            for keyword, response_text in built_in_responses.items():
+                if keyword in message:
+                    # Save the interaction if user is authenticated
+                    if request.user.is_authenticated:
+                        try:
+                            from .models import ChatbotMessage
+                            ChatbotMessage.objects.create(
+                                user=request.user,
+                                message=message,
+                                response=response_text,
+                                is_user_message=True
+                            )
+                        except:
+                            pass  # Silently handle if model doesn't exist yet
+                    
+                    return JsonResponse({'response': response_text})
         
         # Initialize variables to track the best match
         best_match = None
@@ -393,15 +426,36 @@ def chatbot_api(request):
             
             # Save the interaction if user is authenticated
             if request.user.is_authenticated:
-                from .models import ChatbotMessage
-                ChatbotMessage.objects.create(
-                    user=request.user,
-                    message=message,
-                    response=personalized_response,
-                    is_user_message=True
-                )
+                try:
+                    from .models import ChatbotMessage
+                    ChatbotMessage.objects.create(
+                        user=request.user,
+                        message=message,
+                        response=personalized_response,
+                        is_user_message=True
+                    )
+                except:
+                    pass  # Silently handle if model doesn't exist yet
             
             return JsonResponse({'response': personalized_response})
+        
+        # Check built-in responses after database ones
+        for keyword, response_text in built_in_responses.items():
+            if keyword in message:
+                # Save the interaction if user is authenticated
+                if request.user.is_authenticated:
+                    try:
+                        from .models import ChatbotMessage
+                        ChatbotMessage.objects.create(
+                            user=request.user,
+                            message=message,
+                            response=response_text,
+                            is_user_message=True
+                        )
+                    except:
+                        pass  # Silently handle if model doesn't exist yet
+                
+                return JsonResponse({'response': response_text})
         
         # If no match found, return a fallback response
         fallback = ChatbotResponse.objects.filter(
@@ -413,9 +467,22 @@ def chatbot_api(request):
             return JsonResponse({'response': fallback.response})
         
         # Default fallback if no fallbacks defined in the database
-        return JsonResponse({
-            'response': "I'm sorry, I don't have specific information about that. Can I help you with food donations, volunteering, or our marketplace instead?"
-        })
+        fallback_response = "I'm sorry, I don't have specific information about that. Can I help you with food donations, volunteering, or our marketplace instead?"
+        
+        # Save the interaction if user is authenticated
+        if request.user.is_authenticated:
+            try:
+                from .models import ChatbotMessage
+                ChatbotMessage.objects.create(
+                    user=request.user,
+                    message=message,
+                    response=fallback_response,
+                    is_user_message=True
+                )
+            except:
+                pass  # Silently handle if model doesn't exist yet
+        
+        return JsonResponse({'response': fallback_response})
     
     except Exception as e:
         # Log the error

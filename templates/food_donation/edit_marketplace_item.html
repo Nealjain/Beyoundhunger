@@ -69,6 +69,12 @@
                         <div class="mb-3" id="price_field" {% if item.is_free %}style="display:none;"{% endif %}>
                             <label for="price" class="form-label">Price (₹)</label>
                             <input type="number" class="form-control" id="price" name="price" step="0.01" min="0" value="{{ item.price|default:'' }}">
+                            
+                            <div class="form-check mt-2">
+                                <input type="checkbox" class="form-check-input" id="allow_bidding" name="allow_bidding" {% if item.allow_bidding %}checked{% endif %}>
+                                <label class="form-check-label" for="allow_bidding">Allow users to bid on this item</label>
+                                <div class="form-text">If checked, users can offer different prices for your item. If unchecked, they can only buy at your listed price.</div>
+                            </div>
                         </div>
                         
                         <div class="mb-3">

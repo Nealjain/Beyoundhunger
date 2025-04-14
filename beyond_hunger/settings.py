@@ -51,6 +51,13 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'whitenoise.runserver_nostatic',  # For serving static files
     'corsheaders',  # For CORS support
+    
+    # Django AllAuth
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 ]
 
 MIDDLEWARE = [
@@ -66,12 +73,16 @@ MIDDLEWARE = [
     'food_donation.middleware.DeploymentDebugMiddleware',  # Add for debugging
     # Uncomment if needed for login control
     # 'food_donation.middleware.LoginRequiredMiddleware',
+    
+    # Django AllAuth
+    'allauth.account.middleware.AccountMiddleware',
+    'food_donation.middleware.SocialAuthProfileCompletionMiddleware',
 ]
 
 # Custom authentication backends
 AUTHENTICATION_BACKENDS = [
-    'food_donation.auth.EmailOrUsernameModelBackend',
     'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 ROOT_URLCONF = 'beyond_hunger.urls'
@@ -87,6 +98,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'food_donation.context_processors.notifications_processor',
             ],
         },
     },
@@ -178,8 +190,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Authentication settings
 LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = 'food_donation:home'
+LOGOUT_REDIRECT_URL = 'food_donation:home'
 
 # Session settings - increase security
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
@@ -301,4 +313,29 @@ DEFAULT_FROM_EMAIL = 'Beyond Hunger <beyoundhunger1@gmail.com>'
 # AI Chatbot Configuration (OpenAI)
 # Note: This API key should be stored as an environment variable in production
 # or add to a .env file that is not committed to the repository
-OPENAI_API_KEY = 'paste-your-api-key-here'  # Replace with your new API key
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')  # Set this using environment variables, not in source control
+
+# Django AllAuth settings
+SITE_ID = 1
+
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+# Replace deprecated settings with new ones
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
+ACCOUNT_LOGIN_METHODS = {'username', 'email'}
+ACCOUNT_ADAPTER = 'allauth.account.adapter.DefaultAccountAdapter'
+
+# Social account providers
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        }
+    }
+}
+
+LOGIN_REDIRECT_URL = 'food_donation:home'
+ACCOUNT_LOGOUT_REDIRECT_URL = 'food_donation:home'

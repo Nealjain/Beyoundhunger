@@ -1,11 +1,16 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from allauth.account.signals import user_logged_in
+from allauth.socialaccount.signals import social_account_added
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     phone = models.CharField(max_length=20)
     address = models.TextField()
+    profile_photo = models.ImageField(upload_to='profile_photos/', blank=True, null=True)
     is_donor = models.BooleanField(default=False)
     is_volunteer = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -13,6 +18,19 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s Profile"
+        
+    def get_profile_photo_url(self):
+        if self.profile_photo:
+            return self.profile_photo.url
+        else:
+            # Try to get Google social account photo
+            try:
+                social_account = self.user.socialaccount_set.filter(provider='google').first()
+                if social_account and 'picture' in social_account.extra_data:
+                    return social_account.extra_data['picture']
+            except:
+                pass
+            return None
 
 class FoodDonation(models.Model):
     STATUS_CHOICES = [
@@ -110,6 +128,7 @@ class MarketplaceItem(models.Model):
     description = models.TextField()
     price = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)
     is_free = models.BooleanField(default=False)
+    allow_bidding = models.BooleanField(default=True, help_text="Allow users to place bids on this item")
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='other')
     quantity = models.CharField(max_length=50)
     expiry_date = models.DateField(blank=True, null=True)
@@ -146,6 +165,15 @@ class MarketplaceItem(models.Model):
         if self.is_expired() and self.status != 'expired':
             self.status = 'expired'
         super().save(*args, **kwargs)
+        
+    def get_average_bid(self):
+        """Returns the average bid amount for this item"""
+        from django.db.models import Avg
+        return self.bids.aggregate(Avg('amount'))['amount__avg'] or 0
+        
+    def get_bid_count(self):
+        """Returns the number of bids for this item"""
+        return self.bids.count()
 
 class MarketplaceLister(models.Model):
     STATUS_CHOICES = [
@@ -198,6 +226,39 @@ class MarketplaceItemImage(models.Model):
     def __str__(self):
         return f"Image for {self.item.title}"
 
+class MarketplaceBid(models.Model):
+    """Model to store bids on marketplace items"""
+    item = models.ForeignKey(MarketplaceItem, on_delete=models.CASCADE, related_name='bids')
+    bidder = models.ForeignKey(User, on_delete=models.CASCADE, related_name='marketplace_bids')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    message = models.TextField(blank=True, null=True)
+    is_accepted = models.BooleanField(default=False)
+    is_rejected = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-amount', '-created_at']
+        
+    def __str__(self):
+        return f"${self.amount} bid on {self.item.title} by {self.bidder.username}"
+        
+    def accept_bid(self):
+        """Accept this bid and reject all others"""
+        # Set this bid as accepted
+        self.is_accepted = True
+        self.is_rejected = False
+        self.save()
+        
+        # Reject all other bids for this item
+        MarketplaceBid.objects.filter(item=self.item).exclude(pk=self.pk).update(is_rejected=True, is_accepted=False)
+        
+        # Update the item status to pending pickup
+        self.item.status = 'pending'
+        self.item.save()
+        
+        return True
+
 class MoneyDonation(models.Model):
     donor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='money_donations')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -241,3 +302,133 @@ class ChatbotResponse(models.Model):
     
     class Meta:
         ordering = ['-priority', 'category']
+
+# Model to track chatbot interactions with users
+class ChatbotMessage(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chatbot_messages', null=True, blank=True)
+    message = models.TextField()
+    response = models.TextField()
+    is_user_message = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Chat with {self.user.username if self.user else 'Anonymous'}: {self.message[:30]}..."
+    
+    class Meta:
+        ordering = ['-created_at']
+
+# Model for contact form submissions
+class ContactMessage(models.Model):
+    STATUS_CHOICES = [
+        ('new', 'New'),
+        ('in_progress', 'In Progress'),
+        ('resolved', 'Resolved'),
+        ('closed', 'Closed'),
+    ]
+    
+    name = models.CharField(max_length=100)
+    email = models.EmailField()
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    subject = models.CharField(max_length=200)
+    message = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='contact_messages')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.subject} from {self.name}"
+    
+    class Meta:
+        ordering = ['-created_at']
+
+# Add signals to create UserProfile when a new user is created
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    """Create a UserProfile for newly created User instances"""
+    if created:
+        UserProfile.objects.get_or_create(user=instance)
+
+@receiver(user_logged_in)
+def user_logged_in_handler(request, user, **kwargs):
+    """Ensure UserProfile exists when user logs in"""
+    UserProfile.objects.get_or_create(user=user)
+
+@receiver(social_account_added)
+def social_account_added_handler(request, sociallogin, **kwargs):
+    """Ensure UserProfile exists when a social account is added"""
+    UserProfile.objects.get_or_create(user=sociallogin.user)
+
+# Add models for marketplace chat and notifications at the end of the file
+class MarketplaceChat(models.Model):
+    """Model to store chat messages between buyer and seller"""
+    MEDIA_TYPE_CHOICES = [
+        ('', 'None'),
+        ('image', 'Image'),
+        ('video', 'Video'),
+        ('audio', 'Audio'),
+        ('file', 'Other File'),
+    ]
+    
+    item = models.ForeignKey(MarketplaceItem, on_delete=models.CASCADE, related_name='chats')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_chats')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_chats')
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    include_phone = models.BooleanField(default=False, help_text="Include sender's phone number")
+    media_file = models.FileField(upload_to='marketplace_chats/', null=True, blank=True)
+    media_type = models.CharField(max_length=10, choices=MEDIA_TYPE_CHOICES, default='', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Message from {self.sender.username} to {self.receiver.username} about {self.item.title}"
+    
+    @property
+    def media_url(self):
+        """Return the URL of the media file if it exists"""
+        if self.media_file:
+            return self.media_file.url
+        return None
+    
+    def save(self, *args, **kwargs):
+        """Override save to automatically detect media type"""
+        if self.media_file and not self.media_type:
+            file_ext = self.media_file.name.split('.')[-1].lower()
+            if file_ext in ['jpg', 'jpeg', 'png', 'gif']:
+                self.media_type = 'image'
+            elif file_ext in ['mp4', 'mov', 'avi', 'webm']:
+                self.media_type = 'video'
+            elif file_ext in ['mp3', 'wav', 'ogg']:
+                self.media_type = 'audio'
+            else:
+                self.media_type = 'file'
+        super().save(*args, **kwargs)
+    
+    class Meta:
+        ordering = ['created_at']
+
+class Notification(models.Model):
+    """Model to store user notifications"""
+    TYPE_CHOICES = [
+        ('message', 'New Message'),
+        ('bid', 'New Bid'),
+        ('bid_accepted', 'Bid Accepted'),
+        ('system', 'System Notification'),
+        ('admin', 'Admin Notification'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    title = models.CharField(max_length=100)
+    message = models.TextField()
+    related_item = models.ForeignKey(MarketplaceItem, on_delete=models.SET_NULL, null=True, blank=True, related_name='notifications')
+    related_chat = models.ForeignKey(MarketplaceChat, on_delete=models.SET_NULL, null=True, blank=True, related_name='notifications')
+    related_bid = models.ForeignKey(MarketplaceBid, on_delete=models.SET_NULL, null=True, blank=True, related_name='notifications')
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.type} notification for {self.user.username}: {self.title}"
+    
+    class Meta:
+        ordering = ['-created_at']

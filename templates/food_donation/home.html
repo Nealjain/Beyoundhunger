@@ -49,6 +49,59 @@
     </div>
 </section>
 
+<!-- Donor Showcase Section -->
+{% if donor_showcase %}
+<section class="py-5" style="background-color: #f8f9fa;">
+    <div class="container">
+        <h2 class="text-center mb-4 mb-md-5 animate-on-scroll">Our Generous Donors</h2>
+        
+        <div id="donorShowcaseCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                {% for donor in donor_showcase %}
+                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                    <div class="row justify-content-center align-items-center">
+                        <div class="col-md-4 text-center">
+                            <div class="donor-avatar mb-3">
+                                <img src="{{ donor.photo_url }}" alt="{{ donor.name }}" class="img-fluid rounded-circle" style="width: 200px; height: 200px; object-fit: cover; border: 5px solid #4CAF50;">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="donor-card bg-white p-4 rounded shadow-sm">
+                                <h4 class="donor-name">{{ donor.name }}</h4>
+                                <p class="donor-donation">
+                                    <i class="fas fa-utensils text-primary me-2"></i>Donated: <strong>{{ donor.food_type }}</strong> ({{ donor.quantity }})
+                                </p>
+                                <p class="donor-date text-muted">
+                                    <i class="fas fa-calendar-alt me-2"></i>{{ donor.date|date:"F d, Y" }}
+                                </p>
+                                <p class="donor-quote">
+                                    <em>"Thank you for the opportunity to make a difference in our community!"</em>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#donorShowcaseCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon bg-primary rounded-circle p-3" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#donorShowcaseCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon bg-primary rounded-circle p-3" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+        </div>
+        
+        <div class="text-center mt-4">
+            <a href="{% url 'food_donation:donate' %}" class="btn btn-primary">
+                <i class="fas fa-hand-holding-heart me-2"></i>Become a Donor
+            </a>
+        </div>
+    </div>
+</section>
+{% endif %}
+
 <!-- Recent Donations Section -->
 <section class="py-5 bg-light">
     <div class="container">

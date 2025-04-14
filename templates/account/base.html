@@ -1,0 +1,14 @@
+{% extends "food_donation/base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/allauth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="allauth-container">
+        {% block allauth_content %}{% endblock %}
+    </div>
+</div>
+{% endblock %} 

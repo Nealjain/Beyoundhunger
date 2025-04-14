@@ -1,0 +1,55 @@
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-cogs me-2"></i>Admin Dashboard</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+            <a href="{% url 'food_donation:admin_dashboard' %}" class="list-group-item list-group-item-action {% if active == 'dashboard' %}active{% endif %}">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard Overview
+            </a>
+            <a href="{% url 'food_donation:admin_marketplace_listers' %}" class="list-group-item list-group-item-action {% if active == 'marketplace_listers' %}active{% endif %}">
+                <i class="fas fa-user-check me-2"></i>Marketplace Applications
+            </a>
+            <a href="{% url 'food_donation:admin_contact_messages' %}" class="list-group-item list-group-item-action {% if active == 'contact_messages' %}active{% endif %}">
+                <i class="fas fa-envelope me-2"></i>Contact Messages
+            </a>
+            <a href="{% url 'food_donation:admin_send_notification' %}" class="list-group-item list-group-item-action {% if active == 'send_notification' %}active{% endif %}">
+                <i class="fas fa-bell me-2"></i>Send Notifications
+            </a>
+            <a href="{% url 'admin:index' %}" class="list-group-item list-group-item-action" target="_blank">
+                <i class="fas fa-tools me-2"></i>Django Admin
+                <i class="fas fa-external-link-alt ms-2 small"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="fas fa-database me-2"></i>Data Management</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+            <a href="{% url 'admin:food_donation_fooddonation_changelist' %}" class="list-group-item list-group-item-action" target="_blank">
+                <i class="fas fa-utensils me-2"></i>Food Donations
+                <i class="fas fa-external-link-alt ms-2 small"></i>
+            </a>
+            <a href="{% url 'admin:food_donation_moneydonation_changelist' %}" class="list-group-item list-group-item-action" target="_blank">
+                <i class="fas fa-donate me-2"></i>Money Donations
+                <i class="fas fa-external-link-alt ms-2 small"></i>
+            </a>
+            <a href="{% url 'admin:food_donation_marketplaceitem_changelist' %}" class="list-group-item list-group-item-action" target="_blank">
+                <i class="fas fa-store me-2"></i>Marketplace Items
+                <i class="fas fa-external-link-alt ms-2 small"></i>
+            </a>
+            <a href="{% url 'admin:food_donation_notification_changelist' %}" class="list-group-item list-group-item-action" target="_blank">
+                <i class="fas fa-bell me-2"></i>Notifications
+                <i class="fas fa-external-link-alt ms-2 small"></i>
+            </a>
+            <a href="{% url 'admin:food_donation_marketplacechat_changelist' %}" class="list-group-item list-group-item-action" target="_blank">
+                <i class="fas fa-comments me-2"></i>User Messages
+                <i class="fas fa-external-link-alt ms-2 small"></i>
+            </a>
+        </div>
+    </div>
+</div> 

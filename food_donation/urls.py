@@ -15,6 +15,7 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('profile/', views.profile, name='profile'),
+    path('profile/update-photo/', views.update_profile_photo, name='update_profile_photo'),
     
     # Custom admin dashboard URLs
     path('admin-dashboard/', views.custom_admin_dashboard, name='admin_dashboard'),
@@ -22,6 +23,10 @@ urlpatterns = [
     path('admin-dashboard/assignment/<int:assignment_id>/update/', views.update_assignment_status, name='update_assignment_status'),
     path('admin-dashboard/marketplace-listers/', views.admin_marketplace_listers, name='admin_marketplace_listers'),
     path('admin-dashboard/marketplace-lister/<int:pk>/update/', views.update_marketplace_lister_status, name='update_marketplace_lister_status'),
+    path('admin-dashboard/contact-messages/', views.admin_contact_messages, name='admin_contact_messages'),
+    path('admin-dashboard/contact-messages/<int:pk>/update/', views.update_contact_message_status, name='update_contact_message_status'),
+    path('admin-dashboard/send-notification/', views.admin_send_notification, name='admin_send_notification'),
+    path('admin-dashboard/download-delivered-donations/', views.download_delivered_donations_csv, name='download_delivered_donations_csv'),
     
     # Add accounts redirects for Django's default auth
     path('accounts/login/', views.login_view, name='account_login'),
@@ -33,12 +38,27 @@ urlpatterns = [
     path('marketplace/lister-status/', views.marketplace_lister_status, name='marketplace_lister_status'),
     path('marketplace/<int:pk>/', views.marketplace_item_detail, name='marketplace_item_detail'),
     path('marketplace/<int:pk>/report/', views.report_marketplace_item, name='report_marketplace_item'),
+    path('marketplace/<int:pk>/bid/', views.place_bid, name='place_bid'),
+    path('marketplace/<int:item_pk>/bids/<int:bid_pk>/accept/', views.accept_bid, name='accept_bid'),
     path('marketplace/apply-lister/', views.apply_marketplace_lister, name='apply_marketplace_lister'),
     path('marketplace/create/', views.create_marketplace_item, name='create_marketplace_item'),
     path('marketplace/item/<int:pk>/edit/', views.edit_marketplace_item, name='edit_marketplace_item'),
     path('marketplace/item/<int:pk>/delete/', views.delete_marketplace_item, name='delete_marketplace_item'),
     path('marketplace/item/<int:pk>/update-status/', views.update_marketplace_status, name='update_marketplace_status'),
     path('my-marketplace-items/', views.my_marketplace_items, name='my_marketplace_items'),
+    
+    # Marketplace messaging URLs
+    path('marketplace/<int:item_pk>/send-message/', views.send_message, name='send_message'),
+    path('messages/', views.view_messages, name='view_messages'),
+    path('messages/<int:item_pk>/<int:user_pk>/', views.view_conversation, name='view_conversation'),
+    path('messages/send/<int:item_pk>/', views.send_message, name='send_message'),
+    path('messages/delete-conversation/<int:item_pk>/<int:user_pk>/', views.delete_conversation, name='delete_conversation'),
+    path('messages/delete-message/<int:message_id>/', views.delete_message, name='delete_message'),
+    
+    # Notifications
+    path('notifications/', views.notifications, name='notifications'),
+    path('notifications/delete/<int:notification_id>/', views.delete_notification, name='delete_notification'),
+    path('notifications/mark-read/<int:notification_id>/', views.mark_notification_read, name='mark_notification_read'),
 
     # API routes
     path('api/login/', api.login_api, name='api_login'),
@@ -62,4 +82,13 @@ urlpatterns = [
 
     # Add this new URL for money donation confirmation
     path('confirm-money-donation/', views.confirm_money_donation, name='confirm_money_donation'),
+
+    # Chatbot view
+    path('chatbot/', views.chatbot, name='chatbot'),
+
+    # New profile completion URL
+    path('complete-profile/', views.complete_profile, name='complete_profile'),
+    # Donation receipt download URL
+    path('donation/<int:donation_id>/receipt/', views.download_donation_receipt, name='download_donation_receipt'),
+    path('money-donations/history/', views.money_donation_history, name='money_donation_history'),
 ] 

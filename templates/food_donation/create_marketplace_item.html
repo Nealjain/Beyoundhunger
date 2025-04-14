@@ -76,6 +76,12 @@
                         <div class="mb-3 price-field" style="display: none;">
                             <label for="price" class="form-label">Price (₹)</label>
                             <input type="number" step="0.01" min="0" class="form-control" id="price" name="price" placeholder="Enter price in ₹">
+                            
+                            <div class="form-check mt-2">
+                                <input type="checkbox" class="form-check-input" id="allow_bidding" name="allow_bidding" checked>
+                                <label class="form-check-label" for="allow_bidding">Allow users to bid on this item</label>
+                                <div class="form-text">If checked, users can offer different prices for your item. If unchecked, they can only buy at your listed price.</div>
+                            </div>
                         </div>
                         
                         <div class="mb-4">

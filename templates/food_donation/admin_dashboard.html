@@ -60,6 +60,26 @@
                     </div>
                 </div>
                 
+                <!-- Admin Actions -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="btn-group w-100">
+                            <a href="{% url 'food_donation:admin_marketplace_listers' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-store me-2"></i>Manage Marketplace Listers
+                            </a>
+                            <a href="{% url 'food_donation:admin_contact_messages' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-envelope me-2"></i>View Contact Messages
+                            </a>
+                            <a href="{% url 'food_donation:admin_send_notification' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-bell me-2"></i>Send User Notifications
+                            </a>
+                            <a href="{% url 'admin:index' %}" class="btn btn-outline-primary" target="_blank">
+                                <i class="fas fa-cog me-2"></i>Django Admin
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Tabs for different data sections -->
                 <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
                     <li class="nav-item" role="presentation">
@@ -87,12 +107,23 @@
                             <i class="fas fa-user-friends me-2"></i>Volunteers
                         </button>
                     </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="messages-tab" data-bs-toggle="tab" data-bs-target="#messages" type="button" role="tab">
+                            <i class="fas fa-comments me-2"></i>User Messages
+                        </button>
+                    </li>
                 </ul>
                 
                 <!-- Tab Content -->
                 <div class="tab-content" id="adminTabsContent">
                     <!-- Donations Tab -->
                     <div class="tab-pane fade show active" id="donations" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h3>Donations</h3>
+                            <a href="{% url 'food_donation:download_delivered_donations_csv' %}" class="btn btn-success">
+                                <i class="fas fa-file-csv me-2"></i>Download Delivered Donations (CSV)
+                            </a>
+                        </div>
                         <div class="table-responsive">
                             <table class="table table-striped admin-table">
                                 <thead class="table-dark">
@@ -179,6 +210,12 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            
+                                            {% if donation.status == 'delivered' %}
+                                                <a href="{% url 'food_donation:download_donation_receipt' donation.id %}" class="btn btn-sm btn-success ms-1" target="_blank">
+                                                    <i class="fas fa-file-pdf"></i> Receipt
+                                                </a>
+                                            {% endif %}
                                         </td>
                                     </tr>
                                     {% empty %}
@@ -445,6 +482,106 @@
                                     {% endfor %}
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                    
+                    <!-- User Messages Tab -->
+                    <div class="tab-pane fade" id="messages" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h3>User Messaging</h3>
+                            <a href="{% url 'food_donation:admin_send_notification' %}" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-1"></i> New Message to Users
+                            </a>
+                        </div>
+                        
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="fas fa-comments me-2"></i>Recent User Conversations</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>User</th>
+                                                <th>Email</th>
+                                                <th>Last Message</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for profile in user_profiles|slice:":10" %}
+                                            <tr>
+                                                <td>{{ profile.user.username }}</td>
+                                                <td>{{ profile.user.email }}</td>
+                                                <td>
+                                                    {% comment %}
+                                                    This would ideally display the most recent message timestamp
+                                                    {% endcomment %}
+                                                    -
+                                                </td>
+                                                <td>
+                                                    <a href="#" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#messageModal{{ profile.user.id }}">
+                                                        <i class="fas fa-comment"></i> Message
+                                                    </a>
+                                                    
+                                                    <!-- Modal for sending message -->
+                                                    <div class="modal fade" id="messageModal{{ profile.user.id }}" tabindex="-1" aria-hidden="true">
+                                                        <div class="modal-dialog">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header bg-primary text-white">
+                                                                    <h5 class="modal-title">Send Message to {{ profile.user.username }}</h5>
+                                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                </div>
+                                                                <form action="{% url 'food_donation:admin_send_notification' %}" method="post">
+                                                                    {% csrf_token %}
+                                                                    <div class="modal-body">
+                                                                        <input type="hidden" name="recipient_type" value="specific">
+                                                                        <input type="hidden" name="specific_user" value="{{ profile.user.id }}">
+                                                                        <div class="mb-3">
+                                                                            <label for="title{{ profile.user.id }}" class="form-label">Subject</label>
+                                                                            <input type="text" class="form-control" id="title{{ profile.user.id }}" name="title" required>
+                                                                        </div>
+                                                                        <div class="mb-3">
+                                                                            <label for="message{{ profile.user.id }}" class="form-label">Message</label>
+                                                                            <textarea class="form-control" id="message{{ profile.user.id }}" name="message" rows="4" required></textarea>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="modal-footer">
+                                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                        <button type="submit" class="btn btn-primary">Send Message</button>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr>
+                                                <td colspan="4" class="text-center py-4">No users found.</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0"><i class="fas fa-bell me-2"></i>Recent Notifications Sent</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-center">
+                                    <a href="{% url 'food_donation:admin_send_notification' %}" class="btn btn-primary">
+                                        <i class="fas fa-paper-plane me-1"></i> Send New Notification
+                                    </a>
+                                </p>
+                                <p class="text-center text-muted">
+                                    Use the notification system to send broadcasts to all users or specific groups.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>

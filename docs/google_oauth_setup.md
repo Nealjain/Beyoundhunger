@@ -46,8 +46,8 @@ This guide will walk you through the process of setting up Google OAuth for your
 1. Open your `beyond_hunger/settings.py` file
 2. Find the following settings:
    ```python
-   SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = ''  # Your Google Client ID
-   SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = ''  # Your Google Client Secret
+   SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = 'your-client-id.apps.googleusercontent.com'  # Your Google Client ID
+   SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = 'your-client-secret'  # Your Google Client Secret
    ```
 3. Replace the empty strings with your Client ID and Client Secret:
    ```python

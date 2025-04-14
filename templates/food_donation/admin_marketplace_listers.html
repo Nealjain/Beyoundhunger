@@ -1,5 +1,6 @@
 {% extends 'food_donation/base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block title %}Admin - Marketplace Listers{% endblock %}
 
@@ -143,6 +144,27 @@
                                                 <div class="card">
                                                     <div class="card-body bg-light">
                                                         <p class="mb-0"><strong>ID Number:</strong> {{ lister.id_verification }}</p>
+                                                        
+                                                        <!-- ID Images Section -->
+                                                        <div class="mt-3">
+                                                            <p class="mb-2"><strong>ID Verification Images:</strong></p>
+                                                            {% if id_images|get_item:lister.id %}
+                                                                <div class="row">
+                                                                    {% for img in id_images|get_item:lister.id %}
+                                                                        <div class="col-md-6 mb-3">
+                                                                            <a href="{{ img.image.url }}" target="_blank" class="d-block">
+                                                                                <img src="{{ img.image.url }}" alt="ID Verification Image" class="img-fluid img-thumbnail" style="max-height: 200px;">
+                                                                            </a>
+                                                                            <small class="text-muted">Uploaded: {{ img.uploaded_at|date:"M d, Y" }}</small>
+                                                                        </div>
+                                                                    {% endfor %}
+                                                                </div>
+                                                            {% else %}
+                                                                <div class="alert alert-warning">
+                                                                    <i class="fas fa-exclamation-triangle me-2"></i>No ID images uploaded
+                                                                </div>
+                                                            {% endif %}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>

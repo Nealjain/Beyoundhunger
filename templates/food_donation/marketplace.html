@@ -175,6 +175,11 @@
                                     <span class="text-success fw-bold">Free</span>
                                     {% else %}
                                     <span class="fw-bold">₹{{ item.price|default:"Price not specified" }}</span>
+                                    {% if item.bids.exists %}
+                                    <span class="badge bg-warning text-dark ms-1">
+                                        <i class="fas fa-gavel"></i> {{ item.bids.count }} bid{{ item.bids.count|pluralize }}
+                                    </span>
+                                    {% endif %}
                                     {% endif %}
                                 </div>
                                 <a href="{% url 'food_donation:marketplace_item_detail' item.pk %}" class="btn btn-sm btn-outline-primary">View Details</a>

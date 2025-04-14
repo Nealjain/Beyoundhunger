@@ -1,0 +1,107 @@
+{% extends 'food_donation/base.html' %}
+{% load static %}
+{% load food_donation_filters %}
+
+{% block title %}Marketplace Messages{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-3">
+            {% include 'food_donation/profile_sidebar.html' with active='messages' %}
+        </div>
+        
+        <div class="col-lg-9">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-comments me-2"></i>Marketplace Messages</h5>
+                </div>
+                <div class="card-body">
+                    {% if conversations %}
+                        <div class="list-group">
+                            {% for convo in conversations %}
+                                <div class="list-group-item p-0">
+                                    <div class="d-flex justify-content-between">
+                                        <a href="{% url 'food_donation:view_conversation' convo.item.pk convo.other_user.pk %}" class="p-3 flex-grow-1 text-decoration-none text-dark">
+                                            <div class="d-flex gap-3">
+                                                <div class="flex-shrink-0">
+                                                    {% if convo.item.image %}
+                                                        <img src="{{ convo.item.image.url }}" alt="{{ convo.item.title }}" class="rounded" width="64" height="64" style="object-fit: cover;">
+                                                    {% else %}
+                                                        <div class="bg-light d-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+                                                            <i class="fas fa-shopping-basket fa-2x text-muted"></i>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <div class="d-flex w-100 justify-content-between">
+                                                        <h6 class="mb-0">{{ convo.item.title }}</h6>
+                                                        <small class="text-muted">{{ convo.latest_message_date|timesince }} ago</small>
+                                                    </div>
+                                                    <p class="mb-1">Conversation with <strong>{{ convo.other_user.username }}</strong></p>
+                                                    <small class="text-muted">
+                                                        {% with recent_msg=convo.messages|first %}
+                                                            {% if recent_msg %}
+                                                                {% if recent_msg.sender == request.user %}
+                                                                    <i class="fas fa-paper-plane me-1 text-primary"></i>You: 
+                                                                {% else %}
+                                                                    <i class="fas fa-reply me-1 text-success"></i>{{ recent_msg.sender.username }}:
+                                                                {% endif %}
+                                                                {{ recent_msg.message|truncatechars:50 }}
+                                                            {% endif %}
+                                                        {% endwith %}
+                                                    </small>
+                                                    
+                                                    {% with unread_count=convo.messages|count_unread_messages:request.user %}
+                                                        {% if unread_count > 0 %}
+                                                            <span class="badge bg-danger rounded-pill ms-2">{{ unread_count }}</span>
+                                                        {% endif %}
+                                                    {% endwith %}
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="border-start d-flex align-items-center px-3">
+                                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteConvoModal{{ convo.item.pk }}_{{ convo.other_user.pk }}">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Delete Conversation Modal -->
+                                <div class="modal fade" id="deleteConvoModal{{ convo.item.pk }}_{{ convo.other_user.pk }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header bg-danger text-white">
+                                                <h5 class="modal-title">Delete Conversation</h5>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>Are you sure you want to delete your conversation with <strong>{{ convo.other_user.username }}</strong> about <strong>{{ convo.item.title }}</strong>?</p>
+                                                <p class="mb-0"><strong>Warning:</strong> This action cannot be undone.</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <form action="{% url 'food_donation:delete_conversation' convo.item.pk convo.other_user.pk %}" method="post">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-danger">Delete Conversation</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-comment-slash fa-4x text-muted mb-3"></i>
+                            <h5>No messages yet</h5>
+                            <p class="text-muted">When you send or receive messages, they will appear here.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

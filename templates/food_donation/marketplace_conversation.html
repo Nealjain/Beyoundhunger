@@ -1,0 +1,211 @@
+{% extends 'food_donation/base.html' %}
+{% load static %}
+
+{% block title %}Conversation about {{ item.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'food_donation:home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'food_donation:view_messages' %}">Messages</a></li>
+            <li class="breadcrumb-item active">{{ item.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Item Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        {% if item.image %}
+                            <img src="{{ item.image.url }}" class="rounded me-3" alt="{{ item.title }}" style="width: 80px; height: 80px; object-fit: cover;">
+                        {% else %}
+                            <div class="bg-light d-flex align-items-center justify-content-center me-3 rounded" style="width: 80px; height: 80px;">
+                                <i class="fas fa-shopping-basket fa-2x text-muted"></i>
+                            </div>
+                        {% endif %}
+                        <div>
+                            <h5 class="mb-1">{{ item.title }}</h5>
+                            <p class="text-muted mb-0">
+                                {% if item.is_free %}
+                                    <span class="badge bg-success">FREE</span>
+                                {% else %}
+                                    <span class="badge bg-primary">₹{{ item.price }}</span>
+                                {% endif %}
+                                <span class="badge bg-secondary">{{ item.get_status_display }}</span>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <a href="{% url 'food_donation:marketplace_item_detail' item.pk %}" class="btn btn-outline-primary w-100 mb-3">
+                        <i class="fas fa-eye me-2"></i>View Listing
+                    </a>
+                    
+                    <h6 class="mb-2">About {{ other_user.username }}</h6>
+                    <div class="d-flex align-items-center mb-3">
+                        {% if other_profile.get_profile_photo_url %}
+                            <img src="{{ other_profile.get_profile_photo_url }}" class="rounded-circle me-2" alt="{{ other_user.username }}" width="32" height="32">
+                        {% else %}
+                            <i class="fas fa-user-circle fa-2x me-2 text-secondary"></i>
+                        {% endif %}
+                        <div>
+                            <div class="fw-bold">{{ other_user.get_full_name|default:other_user.username }}</div>
+                            <div class="small text-muted">Member since {{ other_user.date_joined|date:"M Y" }}</div>
+                        </div>
+                    </div>
+                    
+                    {% if is_seller %}
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i>You're the seller of this item.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-comments me-2"></i>
+                        Conversation with {{ other_user.username }}
+                    </h5>
+                </div>
+                
+                <div class="card-body">
+                    <div class="conversation-container" style="height: 400px; overflow-y: auto; display: flex; flex-direction: column;">
+                        {% if messages %}
+                            {% for msg in messages %}
+                                <div class="mb-3 d-flex {% if msg.sender == request.user %}justify-content-end{% endif %}">
+                                    <div class="message-bubble p-3 rounded {% if msg.sender == request.user %}bg-primary text-white{% else %}bg-light{% endif %}" style="max-width: 75%;">
+                                        <div class="message-content">{{ msg.message|linebreaks }}</div>
+                                        
+                                        {% if msg.media_url %}
+                                            <div class="message-media mt-2">
+                                                {% if msg.media_type == 'image' %}
+                                                    <a href="{{ msg.media_url }}" target="_blank">
+                                                        <img src="{{ msg.media_url }}" alt="Shared image" class="img-fluid rounded" style="max-height: 150px;">
+                                                    </a>
+                                                {% elif msg.media_type == 'video' %}
+                                                    <video controls class="img-fluid rounded" style="max-height: 150px;">
+                                                        <source src="{{ msg.media_url }}" type="video/mp4">
+                                                        Your browser does not support the video tag.
+                                                    </video>
+                                                {% elif msg.media_type == 'audio' %}
+                                                    <audio controls class="w-100">
+                                                        <source src="{{ msg.media_url }}" type="audio/mpeg">
+                                                        Your browser does not support the audio element.
+                                                    </audio>
+                                                {% else %}
+                                                    <a href="{{ msg.media_url }}" class="btn btn-sm btn-outline-{% if msg.sender == request.user %}light{% else %}primary{% endif %}" target="_blank">
+                                                        <i class="fas fa-file"></i> View attachment
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <div class="message-meta d-flex justify-content-between align-items-center mt-1">
+                                            <span class="small {% if msg.sender == request.user %}text-white-50{% else %}text-muted{% endif %}">
+                                                {{ msg.created_at|date:"M d, g:i A" }}
+                                            </span>
+                                            <div>
+                                                {% if msg.include_phone and msg.sender == request.user %}
+                                                    <span class="badge bg-info me-2">Shared contact</span>
+                                                {% endif %}
+                                                
+                                                {% if msg.sender == request.user %}
+                                                    <button class="btn btn-sm {% if msg.sender == request.user %}btn-outline-light{% else %}btn-outline-danger{% endif %} p-0 px-1" 
+                                                            data-bs-toggle="modal" data-bs-target="#deleteMessageModal{{ msg.id }}">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Delete Message Modal -->
+                                {% if msg.sender == request.user %}
+                                <div class="modal fade" id="deleteMessageModal{{ msg.id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-sm">
+                                        <div class="modal-content">
+                                            <div class="modal-header bg-danger text-white">
+                                                <h5 class="modal-title">Delete Message</h5>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>Are you sure you want to delete this message?</p>
+                                                <p class="mb-0"><small class="text-muted">This action cannot be undone.</small></p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <form action="{% url 'food_donation:delete_message' msg.id %}" method="post">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-comment-dots fa-4x text-muted mb-3"></i>
+                                <h5>Start a conversation</h5>
+                                <p class="text-muted">Send a message to begin chatting about this item.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <form method="post" action="{% url 'food_donation:send_message' item.pk %}" class="mt-3 border-top pt-3" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="receiver" value="{{ other_user.id }}">
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Your Message</label>
+                            <textarea class="form-control" id="message" name="message" rows="3" required
+                                      placeholder="Type your message here..."></textarea>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-check mb-2">
+                                    <input type="checkbox" class="form-check-input" id="include_phone" name="include_phone">
+                                    <label class="form-check-label" for="include_phone">Share my phone number</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <input type="file" class="form-control" id="message_media" name="message_media">
+                                    <label class="input-group-text" for="message_media">
+                                        <i class="fas fa-paperclip"></i>
+                                    </label>
+                                </div>
+                                <div class="form-text">Share a photo, video, or audio message</div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-2"></i>Send Message
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Auto-scroll to bottom of conversation
+    document.addEventListener('DOMContentLoaded', function() {
+        const conversationContainer = document.querySelector('.conversation-container');
+        if (conversationContainer) {
+            conversationContainer.scrollTop = conversationContainer.scrollHeight;
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %} 
