@@ -350,7 +350,7 @@ def chatbot_api(request):
         
         # System prompt to contextualize the AI
         system_prompt = """
-        You are Mr.NealJain, an AI assistant for the Beyond Hunger food donation platform.
+        You are Mr.Jain, an AI assistant for the Beyond Hunger food donation platform.
         
         About Beyond Hunger:
         - We connect food donors with those in need
@@ -423,6 +423,7 @@ def chatbot_api(request):
         
         # Return a helpful error message
         return JsonResponse({
+            'response': "I'm sorry, I'm having trouble connecting right now. Please try again later.",
             'error': 'Sorry, I encountered an issue. Please try again later.',
             'details': str(e) if settings.DEBUG else ''
         }, status=500) 

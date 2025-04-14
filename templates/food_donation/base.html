@@ -635,13 +635,17 @@
         </div>
         <div class="chatbot-window" id="chatbotWindow">
             <div class="chatbot-header">
-                <h5><i class="fas fa-robot me-2"></i>Mr.NealJain</h5>
+                <h5><i class="fas fa-robot me-2"></i>Mr.Jain</h5>
                 <button class="close-btn" id="closeChatbot"><i class="fas fa-times"></i></button>
             </div>
             <div class="chatbot-messages" id="chatbotMessages">
                 <div class="message bot-message">
                     <div class="message-content">
-                        Hello! I'm Mr.NealJain, your Beyond Hunger assistant. How can I help you today?
+                        {% if user.is_authenticated %}
+                        Hello, {{ user.first_name|default:user.username }}! I'm Mr.Jain, your Beyond Hunger assistant. How can I help you today?
+                        {% else %}
+                        Hello! I'm Mr.Jain, your Beyond Hunger assistant. How can I help you today?
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -739,23 +743,31 @@
                         },
                         body: JSON.stringify({ message: message })
                     })
-                    .then(response => response.json())
+                    .then(response => {
+                        console.log('API Response Status:', response.status);
+                        return response.json();
+                    })
                     .then(data => {
                         // Remove typing indicator
                         chatbotMessages.removeChild(typingDiv);
                         
+                        console.log('API Response Data:', data);
+                        
                         // Add the bot's response
                         if (data.error) {
+                            console.error('API Error:', data.error);
                             addMessage("I'm sorry, I'm having trouble connecting right now. Please try again later.");
                         } else {
-                            addMessage(data.response);
+                            addMessage(data.response || "I'm sorry, I couldn't process your request. Please try again.");
                         }
                     })
                     .catch(error => {
                         // Remove typing indicator
-                        chatbotMessages.removeChild(typingDiv);
+                        if (typingDiv.parentNode === chatbotMessages) {
+                            chatbotMessages.removeChild(typingDiv);
+                        }
+                        console.error('Fetch Error:', error);
                         addMessage("I'm sorry, I'm having trouble connecting right now. Please try again later.");
-                        console.error('Error:', error);
                     });
                 }
             }
