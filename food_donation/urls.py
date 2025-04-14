@@ -56,4 +56,7 @@ urlpatterns = [
     # Debug URLs - these will work without authentication
     path('debug/', views_debug.debug_home, name='debug_home'),
     path('debug-info/', views_debug.debug_info, name='debug_info'),
+
+    # Add this new URL for money donation confirmation
+    path('confirm-money-donation/', views.confirm_money_donation, name='confirm_money_donation'),
 ] 

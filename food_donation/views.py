@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from .models import (
     UserProfile, FoodDonation, Volunteer, DeliveryAssignment, 
     MarketplaceLister, MarketplaceItem, MarketplaceItemImage, 
-    FoodDonationImage, IDVerificationImage, MarketplaceReport
+    FoodDonationImage, IDVerificationImage, MarketplaceReport, MoneyDonation
 )
 from django.utils import timezone
 from decimal import Decimal
@@ -14,6 +14,7 @@ from django.db.models import Q
 from django.core.paginator import Paginator
 import os
 from django.db import connection
+from django.core.mail import EmailMultiAlternatives
 
 def home(request):
     context = {
@@ -150,16 +151,18 @@ def logout_view(request):
 @login_required
 def profile(request):
     user_profile = request.user.userprofile
-    donations = FoodDonation.objects.filter(donor=request.user).order_by('-created_at')
+    food_donations = FoodDonation.objects.filter(donor=request.user)
+    money_donations = MoneyDonation.objects.filter(donor=request.user)
     
     # Get all food donation images
     food_images = {}
-    for donation in donations:
+    for donation in food_donations:
         food_images[donation.id] = FoodDonationImage.objects.filter(donation=donation)
     
     context = {
-        'profile': user_profile,
-        'donations': donations,
+        'user_profile': user_profile,
+        'food_donations': food_donations,
+        'money_donations': money_donations,
         'food_images': food_images,
     }
     if user_profile.is_volunteer:
@@ -738,3 +741,50 @@ def report_marketplace_item(request, pk):
     
     # If not a POST request, redirect back to the item detail page
     return redirect('food_donation:marketplace_item_detail', pk=pk)
+
+@login_required
+def confirm_money_donation(request):
+    if request.method == 'POST':
+        amount = request.POST.get('amount')
+        if amount:
+            money_donation = MoneyDonation.objects.create(
+                donor=request.user,
+                amount=float(amount),
+                is_acknowledged=True
+            )
+            # Send email confirmation if email is configured
+            try:
+                send_money_donation_confirmation(request.user, money_donation)
+            except:
+                pass  # Handle silently if email sending fails
+            messages.success(request, "Thank you for your donation! It has been recorded.")
+        return redirect('food_donation:profile')
+    return redirect('food_donation:money_donate')
+
+def send_money_donation_confirmation(user, donation):
+    subject = 'Thank you for your monetary donation'
+    from_email = 'Beyond Hunger <beyoundhunger1@gmail.com>'
+    to = user.email
+    
+    # Prepare HTML message
+    html_content = f"""
+    <html>
+    <head>
+        <title>Donation Confirmation</title>
+    </head>
+    <body>
+        <h1>Thank you for your donation!</h1>
+        <p>Dear {user.first_name or user.username},</p>
+        <p>We have received your monetary donation of ${donation.amount}.</p>
+        <p>Your contribution will help us fight hunger in our community.</p>
+        <p>Thank you for supporting Beyond Hunger!</p>
+    </body>
+    </html>
+    """
+    text_content = f"Thank you for your donation of ${donation.amount}. Your contribution will help us fight hunger in our community."
+    
+    # Create email
+    email = EmailMultiAlternatives(subject, text_content, from_email, [to])
+    email.attach_alternative(html_content, "text/html")
+    email.send()
+    return True

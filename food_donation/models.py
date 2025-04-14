@@ -49,6 +49,8 @@ class FoodDonation(models.Model):
     transaction_id = models.CharField(max_length=100, null=True, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     
+    is_hidden = models.BooleanField(default=False)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -195,3 +197,18 @@ class MarketplaceItemImage(models.Model):
     
     def __str__(self):
         return f"Image for {self.item.title}"
+
+class MoneyDonation(models.Model):
+    donor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='money_donations')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    payment_method = models.CharField(max_length=50, blank=True, null=True)
+    is_acknowledged = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"${self.amount} by {self.donor.username}"
+    
+    class Meta:
+        ordering = ['-created_at']

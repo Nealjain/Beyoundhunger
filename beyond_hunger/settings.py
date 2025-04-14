@@ -287,3 +287,18 @@ if DISABLE_LOGIN_REDIRECT:
     LOGIN_URL = '/'
     LOGIN_REDIRECT_URL = '/'
     LOGOUT_REDIRECT_URL = '/'
+
+# Email Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'beyoundhunger1@gmail.com'
+# Use an app password, not your Gmail password
+EMAIL_HOST_PASSWORD = ''  # You'll need to set this up with an app password
+DEFAULT_FROM_EMAIL = 'Beyond Hunger <beyoundhunger1@gmail.com>'
+
+# AI Chatbot Configuration (OpenAI)
+# Note: This API key should be stored as an environment variable in production
+# or add to a .env file that is not committed to the repository
+OPENAI_API_KEY = ''  # Get a new API key, DO NOT use the one shared in the conversation
