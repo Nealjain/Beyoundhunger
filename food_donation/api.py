@@ -10,6 +10,11 @@ import json
 # Serializers for our models
 from rest_framework import serializers
 
+# Import OpenAI library
+import openai
+from django.conf import settings
+from django.http import JsonResponse
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -328,4 +333,72 @@ def login_api(request):
             'last_name': user.last_name,
         })
     else:
-        return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED) 
+        return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+
+# Chatbot API endpoint
+@api_view(['POST'])
+def chatbot_api(request):
+    """API endpoint for getting a response from the AI chatbot"""
+    try:
+        # Get message from request
+        message = request.data.get('message', '')
+        if not message:
+            return JsonResponse({'error': 'Message is required'}, status=400)
+        
+        # Initialize OpenAI client
+        client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+        
+        # System prompt to contextualize the AI
+        system_prompt = """
+        You are a helpful assistant for the Beyond Hunger food donation platform. 
+        
+        About Beyond Hunger:
+        - We connect food donors with those in need
+        - We accept both food and monetary donations
+        - We have a volunteer program for food delivery
+        - We have a marketplace where verified users can list food items
+        
+        Provide helpful, friendly, and concise responses about the platform. 
+        If users ask about donation process, volunteer opportunities, or how the platform works,
+        provide specific and useful information.
+        """
+        
+        # Call OpenAI API
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": message}
+            ],
+            max_tokens=150,
+            temperature=0.7,
+        )
+        
+        # Get response text
+        bot_response = response.choices[0].message.content.strip()
+        
+        # Save the chat message in the database if user is authenticated
+        if request.user.is_authenticated:
+            from food_donation.models import ChatbotMessage
+            ChatbotMessage.objects.create(
+                user=request.user,
+                message=message,
+                response=bot_response,
+                is_user_message=True
+            )
+        
+        return JsonResponse({
+            'response': bot_response
+        })
+    
+    except Exception as e:
+        # Log the error
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Chatbot API error: {str(e)}")
+        
+        # Return a helpful error message
+        return JsonResponse({
+            'error': 'Sorry, I encountered an issue. Please try again later.',
+            'details': str(e) if settings.DEBUG else ''
+        }, status=500) 

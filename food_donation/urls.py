@@ -53,6 +53,9 @@ urlpatterns = [
     path('api/assign-delivery/', api.assign_delivery, name='api_assign_delivery'),
     path('api/users/', api.list_users, name='api_users'),
 
+    # Chatbot API
+    path('api/chatbot/', api.chatbot_api, name='api_chatbot'),
+
     # Debug URLs - these will work without authentication
     path('debug/', views_debug.debug_home, name='debug_home'),
     path('debug-info/', views_debug.debug_info, name='debug_info'),

@@ -493,6 +493,35 @@
         .chatbot-input button:hover {
             background-color: #3a57c5;
         }
+
+        /* Add typing indicator styles */
+        .typing-dots {
+            display: inline-block;
+        }
+
+        .typing-dots span {
+            width: 7px;
+            height: 7px;
+            margin: 0 1px;
+            background-color: #999;
+            display: inline-block;
+            border-radius: 50%;
+            animation: typingAnimation 1.5s infinite ease-in-out;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typingAnimation {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -694,19 +723,57 @@
                     addMessage(message, true);
                     chatbotInput.value = '';
                     
-                    // Simple responses
-                    setTimeout(() => {
-                        if (message.toLowerCase().includes('donate')) {
-                            addMessage('You can donate food by clicking on the "Donate Food" link in the navigation menu. We also accept monetary donations!');
-                        } else if (message.toLowerCase().includes('volunteer')) {
-                            addMessage('Thank you for your interest in volunteering! Please check our "About" page for more information on how to join our volunteer team.');
-                        } else if (message.toLowerCase().includes('help')) {
-                            addMessage('I can help you with information about donations, volunteering, or navigating our website. What would you like to know?');
+                    // Show typing indicator
+                    const typingDiv = document.createElement('div');
+                    typingDiv.className = 'message bot-message typing';
+                    typingDiv.innerHTML = '<div class="message-content"><span class="typing-dots"><span>.</span><span>.</span><span>.</span></span></div>';
+                    chatbotMessages.appendChild(typingDiv);
+                    chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+                    
+                    // Call the API
+                    fetch('/api/chatbot/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: JSON.stringify({ message: message })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Remove typing indicator
+                        chatbotMessages.removeChild(typingDiv);
+                        
+                        // Add the bot's response
+                        if (data.error) {
+                            addMessage("I'm sorry, I'm having trouble connecting right now. Please try again later.");
                         } else {
-                            addMessage('Thanks for reaching out! For specific questions, please use our contact form or email us directly at support@beyondhunger.org.');
+                            addMessage(data.response);
                         }
-                    }, 1000);
+                    })
+                    .catch(error => {
+                        // Remove typing indicator
+                        chatbotMessages.removeChild(typingDiv);
+                        addMessage("I'm sorry, I'm having trouble connecting right now. Please try again later.");
+                        console.error('Error:', error);
+                    });
                 }
+            }
+            
+            // Get CSRF token from cookies
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
             }
             
             sendMessage.addEventListener('click', handleUserMessage);
