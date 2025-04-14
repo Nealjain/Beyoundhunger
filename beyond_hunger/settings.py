@@ -301,4 +301,4 @@ DEFAULT_FROM_EMAIL = 'Beyond Hunger <beyoundhunger1@gmail.com>'
 # AI Chatbot Configuration (OpenAI)
 # Note: This API key should be stored as an environment variable in production
 # or add to a .env file that is not committed to the repository
-OPENAI_API_KEY = ''  # Get a new API key, DO NOT use the one shared in the conversation
+OPENAI_API_KEY = 'paste-your-api-key-here'  # Replace with your new API key

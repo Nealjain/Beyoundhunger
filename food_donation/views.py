@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from .models import (
     UserProfile, FoodDonation, Volunteer, DeliveryAssignment, 
     MarketplaceLister, MarketplaceItem, MarketplaceItemImage, 
-    FoodDonationImage, IDVerificationImage, MarketplaceReport, MoneyDonation
+    FoodDonationImage, IDVerificationImage, MoneyDonation
 )
 from django.utils import timezone
 from decimal import Decimal

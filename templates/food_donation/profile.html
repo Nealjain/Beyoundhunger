@@ -15,15 +15,15 @@
                         <div class="rounded-circle bg-light mx-auto mb-3 d-flex align-items-center justify-content-center hover-scale" style="width: 150px; height: 150px;">
                             <i class="fas fa-user fa-5x text-primary"></i>
                         </div>
-                        <h3>{{ user.username }}</h3>
-                        <p class="text-muted">Member since {{ user.date_joined|date:"M d, Y" }}</p>
+                        <h3>{{ user_profile.user.username }}</h3>
+                        <p class="text-muted">Member since {{ user_profile.user.date_joined|date:"M d, Y" }}</p>
                         
                         <div class="d-flex justify-content-center mt-3">
-                            {% if profile.is_donor %}
+                            {% if user_profile.is_donor %}
                             <span class="badge bg-primary me-2 hover-effect">Donor</span>
                             {% endif %}
                             
-                            {% if profile.is_volunteer %}
+                            {% if user_profile.is_volunteer %}
                             <span class="badge bg-success hover-effect">Volunteer</span>
                             {% endif %}
                         </div>
@@ -38,7 +38,7 @@
                                         <strong><i class="fas fa-envelope me-2 text-primary"></i>Email:</strong>
                                     </div>
                                     <div class="col-md-8">
-                                        {{ user.email }}
+                                        {{ user_profile.user.email }}
                                     </div>
                                 </div>
                                 
@@ -47,7 +47,7 @@
                                         <strong><i class="fas fa-phone me-2 text-primary"></i>Phone:</strong>
                                     </div>
                                     <div class="col-md-8">
-                                        {{ profile.phone }}
+                                        {{ user_profile.phone }}
                                     </div>
                                 </div>
                                 
@@ -56,13 +56,13 @@
                                         <strong><i class="fas fa-map-marker-alt me-2 text-primary"></i>Address:</strong>
                                     </div>
                                     <div class="col-md-8">
-                                        {{ profile.address }}
+                                        {{ user_profile.address }}
                                     </div>
                                 </div>
                             </div>
                         </div>
                         
-                        {% if profile.is_volunteer and volunteer %}
+                        {% if user_profile.is_volunteer and volunteer %}
                         <h4 class="mb-3">Volunteer Information</h4>
                         <div class="card hover-lift">
                             <div class="card-body">
@@ -103,54 +103,52 @@
                 </div>
                 
                 <!-- My Donations Section -->
-                {% if profile.is_donor and donations %}
+                {% if user_profile.is_donor and food_donations %}
                 <h3 class="mb-4"><i class="fas fa-hand-holding-heart me-2 text-primary"></i>My Donations</h3>
                 <div class="table-responsive mb-5">
-                    <table class="table table-hover table-animated">
-                        <thead class="table-light">
+                    <table class="table table-hover">
+                        <thead>
                             <tr>
+                                <th>Date</th>
                                 <th>Food Type</th>
                                 <th>Quantity</th>
-                                <th>Pickup Date</th>
                                 <th>Status</th>
-                                <th>Payment</th>
-                                <th>Created</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for donation in donations %}
-                            <tr class="table-row-hover">
+                            {% for donation in food_donations %}
+                            <tr>
+                                <td>{{ donation.created_at|date:"M d, Y" }}</td>
                                 <td>{{ donation.food_type }}</td>
                                 <td>{{ donation.quantity }}</td>
-                                <td>{{ donation.pickup_date|date:"M d, Y" }}</td>
                                 <td>
-                                    <span class="badge {% if donation.status == 'delivered' %}bg-success{% elif donation.status == 'pending' %}bg-warning{% else %}bg-primary{% endif %} hover-effect">
-                                        {{ donation.get_status_display }}
-                                    </span>
-                                </td>
-                                <td>
-                                    {% if donation.payment_method %}
-                                    <span class="badge {% if donation.payment_status == 'completed' %}bg-success{% elif donation.payment_status == 'pending' %}bg-warning{% else %}bg-danger{% endif %} hover-effect">
-                                        {{ donation.get_payment_status_display }}
-                                    </span>
-                                    {% else %}
-                                    <span class="badge bg-secondary hover-effect">None</span>
+                                    {% if donation.status == 'pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                    {% elif donation.status == 'accepted' %}
+                                    <span class="badge bg-info">Accepted</span>
+                                    {% elif donation.status == 'in_transit' %}
+                                    <span class="badge bg-primary">In Transit</span>
+                                    {% elif donation.status == 'delivered' %}
+                                    <span class="badge bg-success">Delivered</span>
+                                    {% elif donation.status == 'cancelled' %}
+                                    <span class="badge bg-danger">Cancelled</span>
                                     {% endif %}
                                 </td>
-                                <td>{{ donation.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">Details</button>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
-                {% elif profile.is_donor %}
+                {% elif user_profile.is_donor %}
                 <div class="card mb-5 hover-lift">
                     <div class="card-body text-center py-5">
-                        <h4 class="mb-3">You haven't made any donations yet</h4>
-                        <p class="mb-4">Help us reduce food waste and support those in need by making a food donation today.</p>
-                        <a href="{% url 'food_donation:donate' %}" class="btn btn-primary">
-                            <i class="fas fa-plus-circle me-2"></i>Make a Donation
-                        </a>
+                        <h4>You haven't made any food donations yet.</h4>
+                        <p class="text-muted">Start helping people by donating your extra food!</p>
+                        <a href="{% url 'food_donation:donate' %}" class="btn btn-primary mt-2">Donate Food</a>
                     </div>
                 </div>
                 {% endif %}
@@ -211,7 +209,7 @@
                 </div>
                 
                 <!-- Volunteer Assignments Section -->
-                {% if profile.is_volunteer and assignments %}
+                {% if user_profile.is_volunteer and assignments %}
                 <h3 class="mb-4"><i class="fas fa-truck me-2 text-primary"></i>My Delivery Assignments</h3>
                 <div class="table-responsive">
                     <table class="table table-hover table-animated">
