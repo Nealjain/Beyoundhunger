@@ -432,3 +432,34 @@ class Notification(models.Model):
     
     class Meta:
         ordering = ['-created_at']
+
+class FoodPandal(models.Model):
+    """Model to track free food distribution locations (pandals)"""
+    name = models.CharField(max_length=255)
+    description = models.TextField()
+    address = models.TextField()
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    start_time = models.TimeField(null=True, blank=True)
+    end_time = models.TimeField(null=True, blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_pandals')
+    is_verified = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+class PandalImage(models.Model):
+    """Images for food pandals"""
+    pandal = models.ForeignKey(FoodPandal, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='pandal_images/')
+    caption = models.CharField(max_length=255, blank=True)
+    is_main_image = models.BooleanField(default=False)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Image for {self.pandal.name}"

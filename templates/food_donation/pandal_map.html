@@ -1,0 +1,337 @@
+{% extends 'food_donation/base.html' %}
+{% load static %}
+
+{% block title %}Nearby Bhandara | Beyond Hunger{% endblock %}
+
+{% block extra_css %}
+<style>
+    .location-error {
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        margin: 20px 0;
+    }
+    
+    body.dark-mode .location-error {
+        background-color: rgba(30, 30, 30, 0.9);
+    }
+    
+    .pandal-card {
+        transition: transform 0.2s;
+        margin-bottom: 20px;
+    }
+    
+    .pandal-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .pandal-image {
+        height: 200px;
+        object-fit: cover;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+    
+    .filter-section {
+        margin-bottom: 20px;
+    }
+    
+    .distance-label {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .verified-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        margin-top: 20px;
+    }
+    
+    body.dark-mode .empty-state {
+        background-color: #1e1e1e;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+    <div class="row mb-2">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'food_donation:home' %}">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Bhandara Points</li>
+                </ol>
+            </nav>
+            <h1 class="h2">
+                <i class="fas fa-utensils text-primary me-2"></i>
+                Nearby Bhandara
+            </h1>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'food_donation:add_pandal' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i> Add Location
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-location-arrow me-2"></i>Find Nearby Bhandara</h5>
+                    <p>Allow location access to see bhandara points near you.</p>
+                    <button id="get-location" class="btn btn-primary">
+                        <i class="fas fa-map-marker-alt me-2"></i> Use My Location
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <div class="filter-section">
+                        <label for="distance-filter" class="distance-label">Distance Filter</label>
+                        <select id="distance-filter" class="form-select">
+                            <option value="5">Within 5 km</option>
+                            <option value="10" selected>Within 10 km</option>
+                            <option value="20">Within 20 km</option>
+                            <option value="50">Within 50 km</option>
+                        </select>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="verified-only">
+                        <label class="form-check-label" for="verified-only">
+                            Show verified locations only
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Location Access Error -->
+    <div class="location-error" id="location-error" style="display: none;">
+        <h5><i class="fas fa-exclamation-triangle text-warning me-2"></i> Location Access Needed</h5>
+        <p id="error-message">We need permission to access your location to show nearby bhandara points.</p>
+        <button id="try-again" class="btn btn-primary">Try Again</button>
+    </div>
+
+    <!-- Results Section -->
+    <div id="results-container" style="display: none;">
+        <h3 class="mb-3">Nearby Bhandara Points</h3>
+        <div class="row" id="pandal-results">
+            <!-- Pandal cards will be inserted here dynamically -->
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" id="empty-state">
+        <i class="fas fa-map-marker-alt fa-3x text-muted mb-3"></i>
+        <h4>Find Bhandara Near You</h4>
+        <p>Click "Use My Location" to discover bhandara points in your area.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let userLocation = null;
+    let pandals = [
+        {% for pandal in pandals %}
+        {
+            id: {{ pandal.id }},
+            name: "{{ pandal.name }}",
+            lat: {{ pandal.latitude }},
+            lng: {{ pandal.longitude }},
+            verified: {{ pandal.is_verified|lower }},
+            address: "{{ pandal.address }}",
+            description: "{{ pandal.description|truncatechars:100 }}",
+            startDate: "{{ pandal.start_date }}",
+            endDate: "{{ pandal.end_date|default_if_none:'' }}",
+            startTime: "{{ pandal.start_time|default_if_none:'' }}",
+            endTime: "{{ pandal.end_time|default_if_none:'' }}",
+            url: "{% url 'food_donation:pandal_detail' pandal.id %}"
+        },
+        {% endfor %}
+    ];
+    
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Setup event listeners
+        document.getElementById('get-location').addEventListener('click', getUserLocation);
+        document.getElementById('try-again').addEventListener('click', function() {
+            document.getElementById('location-error').style.display = 'none';
+            getUserLocation();
+        });
+        document.getElementById('distance-filter').addEventListener('change', filterPandals);
+        document.getElementById('verified-only').addEventListener('change', filterPandals);
+    });
+    
+    // Get user's location
+    function getUserLocation() {
+        document.getElementById('location-error').style.display = 'none';
+        document.getElementById('empty-state').style.display = 'none';
+        
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    userLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    
+                    // Show pandals based on user location
+                    filterPandals();
+                    document.getElementById('results-container').style.display = 'block';
+                },
+                function(error) {
+                    console.error("Error getting location:", error);
+                    
+                    // Show error message
+                    const errorElement = document.getElementById('location-error');
+                    errorElement.style.display = 'block';
+                    
+                    // Different error messages based on error code
+                    let errorMessage = "Could not access your location.";
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage = "Location permission was denied. Please enable location access in your browser settings.";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage = "Location information is unavailable. Please try again later.";
+                            break;
+                        case error.TIMEOUT:
+                            errorMessage = "The request to get your location timed out. Please try again.";
+                            break;
+                    }
+                    
+                    document.getElementById('error-message').textContent = errorMessage;
+                    document.getElementById('empty-state').style.display = 'block';
+                }
+            );
+        } else {
+            // Browser doesn't support geolocation
+            const errorElement = document.getElementById('location-error');
+            errorElement.style.display = 'block';
+            document.getElementById('error-message').textContent = 
+                "Your browser doesn't support geolocation. Please try using a different browser.";
+            document.getElementById('empty-state').style.display = 'block';
+        }
+    }
+    
+    // Calculate distance between two points using Haversine formula
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371; // Radius of the Earth in km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = 
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const distance = R * c; // Distance in km
+        return distance;
+    }
+    
+    // Filter pandals based on distance and verification status
+    function filterPandals() {
+        if (!userLocation) return;
+        
+        const distanceFilter = parseInt(document.getElementById('distance-filter').value);
+        const verifiedOnly = document.getElementById('verified-only').checked;
+        
+        // Filter pandals based on distance and verification status
+        const filteredPandals = pandals.filter(pandal => {
+            const distance = calculateDistance(
+                userLocation.lat, userLocation.lng,
+                pandal.lat, pandal.lng
+            );
+            
+            if (distance > distanceFilter) return false;
+            if (verifiedOnly && !pandal.verified) return false;
+            
+            // Add distance property to pandal object
+            pandal.distance = distance;
+            return true;
+        });
+        
+        // Sort by distance
+        filteredPandals.sort((a, b) => a.distance - b.distance);
+        
+        // Display results
+        displayPandals(filteredPandals);
+    }
+    
+    // Display pandals in the results container
+    function displayPandals(filteredPandals) {
+        const resultsContainer = document.getElementById('pandal-results');
+        resultsContainer.innerHTML = '';
+        
+        if (filteredPandals.length === 0) {
+            resultsContainer.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        No bhandara points found within ${document.getElementById('distance-filter').value} km.
+                        Try increasing the distance or adding a new location.
+                    </div>
+                </div>
+            `;
+            return;
+        }
+        
+        filteredPandals.forEach(pandal => {
+            const dateInfo = pandal.endDate 
+                ? `${pandal.startDate} to ${pandal.endDate}` 
+                : pandal.startDate;
+                
+            const timeInfo = pandal.startTime 
+                ? (pandal.endTime ? `${pandal.startTime} to ${pandal.endTime}` : pandal.startTime) 
+                : "All day";
+                
+            const card = document.createElement('div');
+            card.className = 'col-md-6 col-lg-4';
+            card.innerHTML = `
+                <div class="card pandal-card shadow-sm">
+                    ${pandal.verified ? 
+                        `<div class="verified-badge">
+                            <span class="badge bg-success">Verified</span>
+                        </div>` : 
+                        `<div class="verified-badge">
+                            <span class="badge bg-warning text-dark">Pending</span>
+                        </div>`
+                    }
+                    <img src="/static/images/food-distribution-default.jpg" class="pandal-image" alt="${pandal.name}">
+                    <div class="card-body">
+                        <h5 class="card-title">${pandal.name}</h5>
+                        <p class="card-text text-muted small">
+                            <i class="fas fa-map-marker-alt me-1"></i> ${pandal.address}
+                        </p>
+                        <p class="card-text small">
+                            <strong><i class="fas fa-calendar-alt me-1"></i> Date:</strong> ${dateInfo}
+                        </p>
+                        <p class="card-text small">
+                            <strong><i class="fas fa-clock me-1"></i> Time:</strong> ${timeInfo}
+                        </p>
+                        <p class="card-text small">
+                            <strong><i class="fas fa-route me-1"></i> Distance:</strong> ${pandal.distance.toFixed(1)} km away
+                        </p>
+                        <a href="${pandal.url}" class="btn btn-primary btn-sm mt-2">
+                            <i class="fas fa-info-circle me-1"></i> View Details
+                        </a>
+                    </div>
+                </div>
+            `;
+            resultsContainer.appendChild(card);
+        });
+    }
+</script>
+{% endblock %} 

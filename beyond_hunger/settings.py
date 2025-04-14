@@ -339,3 +339,6 @@ SOCIALACCOUNT_PROVIDERS = {
 
 LOGIN_REDIRECT_URL = 'food_donation:home'
 ACCOUNT_LOGOUT_REDIRECT_URL = 'food_donation:home'
+
+# Google Maps API key
+GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY', 'AIzaSyDgmQHOQ2n_C2D4G-IpMB2fmDovdF13zH0')  # Default test key for development only

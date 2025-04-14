@@ -1,0 +1,770 @@
+{% extends 'food_donation/base.html' %}
+{% load static %}
+
+{% block title %}Add Food Distribution Location | Beyond Hunger{% endblock %}
+
+{% block extra_css %}
+<style>
+    body.dark-mode {
+        background-color: #121212;
+        color: #f5f5f5;
+    }
+    
+    body.dark-mode .card {
+        background-color: #1e1e1e;
+        color: #f5f5f5;
+    }
+    
+    body.dark-mode .breadcrumb-item a {
+        color: #90caf9;
+    }
+    
+    body.dark-mode .breadcrumb-item.active {
+        color: #bababa;
+    }
+    
+    body.dark-mode .form-control,
+    body.dark-mode .form-select {
+        background-color: #2c2c2c;
+        border-color: #444;
+        color: #f5f5f5;
+    }
+    
+    body.dark-mode .input-group-text {
+        background-color: #333;
+        border-color: #444;
+        color: #f5f5f5;
+    }
+    
+    body.dark-mode .text-muted {
+        color: #aaa !important;
+    }
+    
+    body.dark-mode .location-info {
+        background-color: #2c2c2c;
+    }
+    
+    #map {
+        height: 400px;
+        width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .image-preview-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+    }
+    
+    .image-preview {
+        width: 100%;
+        height: 150px;
+        border-radius: 8px;
+        object-fit: cover;
+        border: 2px solid #ddd;
+    }
+    
+    .required-field::after {
+        content: "*";
+        color: red;
+        margin-left: 4px;
+    }
+    
+    .map-controls {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .map-control-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    .map-container {
+        position: relative;
+        margin-bottom: 20px;
+    }
+    
+    .duration-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .duration-option {
+        flex: 1 0 auto;
+        min-width: 80px;
+    }
+    
+    .location-confirmation {
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+    
+    body.dark-mode .location-confirmation {
+        background-color: #2c2c2c;
+    }
+    
+    .location-error {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        max-width: 80%;
+    }
+    
+    body.dark-mode .location-error {
+        background-color: rgba(30, 30, 30, 0.9);
+    }
+    
+    .pulse {
+        animation: pulse-animation 1s ease-in-out;
+    }
+    
+    @keyframes pulse-animation {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'food_donation:home' %}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'food_donation:pandal_map' %}">Food Distribution Map</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Add Location</li>
+                </ol>
+            </nav>
+            <h1 class="h2">
+                <i class="fas fa-utensils text-primary me-2"></i>
+                Add Food Distribution Point
+            </h1>
+        </div>
+        <div class="col-md-4 text-end">
+            <button id="dark-mode-toggle" class="btn btn-outline-primary me-2">
+                <i class="fas fa-moon"></i> Dark Mode
+            </button>
+            <a href="{% url 'food_donation:pandal_map' %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-2"></i> Back to Map
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    {% if messages %}
+                    <div class="messages mb-4">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="form-group">
+                            <label for="name" class="form-label required-field">Location Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required 
+                                placeholder="e.g., Temple Food Distribution, Community Kitchen">
+                        </div>
+                        
+                        <div class="map-container">
+                            <label class="form-label required-field">Set Location on Map</label>
+                            <p class="text-muted">Drag the marker to the exact location or search for an address</p>
+                            <div class="input-group mb-3">
+                                <input type="text" class="form-control" id="map-search" placeholder="Search for a location">
+                                <button class="btn btn-outline-primary" type="button" id="search-button">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary" type="button" id="current-location-button">
+                                    <i class="fas fa-location-arrow"></i> My Location
+                                </button>
+                            </div>
+                            
+                            <div id="map"></div>
+                            
+                            <div class="map-controls">
+                                <button type="button" id="zoom-in" class="btn btn-light map-control-btn">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <button type="button" id="zoom-out" class="btn btn-light map-control-btn">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <button type="button" id="remove-marker" class="btn btn-danger map-control-btn">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="location-error" id="location-error">
+                                <h5><i class="fas fa-exclamation-triangle text-warning me-2"></i> Location Access Needed</h5>
+                                <p>We need permission to access your location.</p>
+                                <button id="try-again" class="btn btn-primary">Try Again</button>
+                                <p class="mt-3 small">You can also click on the map or search for a location.</p>
+                            </div>
+                            
+                            <div class="location-confirmation" id="location-confirmation">
+                                <i class="fas fa-map-marker-alt text-primary me-2"></i> 
+                                <span id="selected-address">Please select a location on the map</span>
+                            </div>
+                            
+                            <!-- Hidden fields for coordinates -->
+                            <input type="hidden" id="latitude" name="latitude" required>
+                            <input type="hidden" id="longitude" name="longitude" required>
+                            <input type="hidden" id="address" name="address" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="description" class="form-label required-field">Brief Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" required
+                                placeholder="Describe what type of food will be served, who can come, etc."></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="start_date" class="form-label required-field">Event Date</label>
+                                    <input type="date" class="form-control" id="start_date" name="start_date" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="event_duration" class="form-label required-field">Duration</label>
+                                    <select class="form-select" id="event_duration" name="event_duration" required>
+                                        <option value="" selected disabled>Select duration</option>
+                                        <option value="1">1 hour</option>
+                                        <option value="2">2 hours</option>
+                                        <option value="3">3 hours</option>
+                                        <option value="4">4 hours</option>
+                                        <option value="6">6 hours</option>
+                                        <option value="8">8 hours</option>
+                                        <option value="12">12 hours (half day)</option>
+                                        <option value="24">All day (24 hours)</option>
+                                        <option value="multi">Multiple days</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row" id="multi-day-section" style="display: none;">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="end_date" class="form-label">End Date</label>
+                                    <input type="date" class="form-control" id="end_date" name="end_date">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row" id="time-section">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="start_time" class="form-label">Start Time</label>
+                                    <input type="time" class="form-control" id="start_time" name="start_time">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label required-field">Upload Photos</label>
+                            <div class="input-group">
+                                <input type="file" class="form-control" id="images" name="images" multiple accept="image/*" required>
+                                <button class="btn btn-outline-secondary" type="button" id="camera-button">
+                                    <i class="fas fa-camera"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted">Add photos of the food distribution or location (at least one)</small>
+                            <div class="image-preview-container" id="image-previews"></div>
+                        </div>
+                        
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-plus-circle me-2"></i> Add Distribution Point
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 mt-4 mt-lg-0">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="m-0">
+                        <i class="fas fa-info-circle me-2"></i> Tips
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-exclamation-circle me-2"></i> All locations will be verified by our team before appearing on the map.
+                    </div>
+                    
+                    <h6 class="mt-3">What to Include:</h6>
+                    <ul class="list-group list-group-flush mb-3">
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i> Clear photos of the location
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i> Accurate pin on the map
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i> Correct event timing
+                        </li>
+                    </ul>
+                    
+                    <h6>Not Allowed:</h6>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <i class="fas fa-times-circle text-danger me-2"></i> Locations requiring payment
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-times-circle text-danger me-2"></i> Incorrect information
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-times-circle text-danger me-2"></i> Private addresses without permission
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&callback=initMap" async defer></script>
+<script>
+    // Map and marker variables
+    let map;
+    let marker;
+    let geocoder;
+    let autocomplete;
+    let infoWindow;
+    
+    // Initialize the map
+    function initMap() {
+        // Default center (India)
+        const center = { lat: 19.0760, lng: 72.8777 };
+        
+        // Create map
+        map = new google.maps.Map(document.getElementById("map"), {
+            zoom: 12,
+            center: center,
+            streetViewControl: false,
+            mapTypeControl: false,
+            fullscreenControl: false,
+            styles: isDarkMode() ? darkMapStyle : []
+        });
+        
+        // Create geocoder for address lookup
+        geocoder = new google.maps.Geocoder();
+        
+        // Create info window for showing address
+        infoWindow = new google.maps.InfoWindow();
+        
+        // Create marker for selected location (initially not visible)
+        marker = new google.maps.Marker({
+            map: map,
+            draggable: true,
+            animation: google.maps.Animation.DROP
+        });
+        
+        // Set up autocomplete for address search
+        const input = document.getElementById("map-search");
+        autocomplete = new google.maps.places.Autocomplete(input);
+        autocomplete.bindTo("bounds", map);
+        
+        // Add marker when map is clicked
+        map.addListener("click", (event) => {
+            placeMarker(event.latLng);
+        });
+        
+        // Update position when marker is dragged
+        marker.addListener("dragend", () => {
+            const position = marker.getPosition();
+            updateLocationFields(position);
+        });
+        
+        // Search button click handler
+        document.getElementById("search-button").addEventListener("click", () => {
+            const address = document.getElementById("map-search").value;
+            if (address) {
+                geocodeAddress(address);
+            }
+        });
+        
+        // Current location button click handler
+        document.getElementById("current-location-button").addEventListener("click", getCurrentLocation);
+        
+        // Zoom control buttons
+        document.getElementById("zoom-in").addEventListener("click", () => {
+            map.setZoom(map.getZoom() + 1);
+        });
+        
+        document.getElementById("zoom-out").addEventListener("click", () => {
+            map.setZoom(map.getZoom() - 1);
+        });
+        
+        // Enter key in search field
+        document.getElementById("map-search").addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                document.getElementById("search-button").click();
+            }
+        });
+        
+        // Try to get user's current location on page load
+        getCurrentLocation();
+        
+        // Setup dark mode toggle
+        setupDarkModeToggle();
+        
+        // Setup duration selection
+        setupDurationSelection();
+        
+        // Setup image preview
+        setupImagePreview();
+        
+        // Add remove marker button functionality
+        document.getElementById('remove-marker').addEventListener('click', () => {
+            if (marker) {
+                marker.setVisible(false);
+                document.getElementById('latitude').value = '';
+                document.getElementById('longitude').value = '';
+                document.getElementById('address').value = '';
+                document.getElementById('selected-address').textContent = 'Please select a location on the map';
+            }
+        });
+        
+        // Try again button for location error
+        document.getElementById('try-again').addEventListener('click', () => {
+            document.getElementById('location-error').style.display = 'none';
+            getCurrentLocation();
+        });
+    }
+    
+    // Place marker on map
+    function placeMarker(location) {
+        marker.setPosition(location);
+        marker.setVisible(true);
+        map.panTo(location);
+        
+        updateLocationFields(location);
+    }
+    
+    // Geocode address to coordinates
+    function geocodeAddress(address) {
+        geocoder.geocode({ address: address }, (results, status) => {
+            if (status === "OK" && results[0]) {
+                map.setCenter(results[0].geometry.location);
+                placeMarker(results[0].geometry.location);
+            } else {
+                alert("Geocode was not successful for the following reason: " + status);
+            }
+        });
+    }
+    
+    // Get current user location
+    function getCurrentLocation() {
+        if (navigator.geolocation) {
+            // Clear any previous error messages
+            document.getElementById('location-error').style.display = 'none';
+            
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const location = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    
+                    map.setCenter(location);
+                    map.setZoom(15);
+                    placeMarker(location);
+                },
+                (error) => {
+                    console.error("Error getting current location:", error);
+                    
+                    // Show error message to user
+                    const errorElement = document.getElementById('location-error');
+                    errorElement.style.display = 'block';
+                    
+                    // Different error messages based on error code
+                    let errorMessage = "Could not access your location.";
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage = "Location permission was denied. Please enable location access in your browser settings.";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage = "Location information is unavailable. Please try again later.";
+                            break;
+                        case error.TIMEOUT:
+                            errorMessage = "The request to get your location timed out. Please try again.";
+                            break;
+                    }
+                    
+                    errorElement.querySelector('p').textContent = errorMessage;
+                }
+            );
+        } else {
+            // Browser doesn't support geolocation
+            const errorElement = document.getElementById('location-error');
+            errorElement.style.display = 'block';
+            errorElement.querySelector('p').textContent = 
+                "Your browser doesn't support geolocation. Please search for a location or click on the map.";
+        }
+    }
+    
+    // Update form fields with location data
+    function updateLocationFields(location) {
+        const lat = location.lat();
+        const lng = location.lng();
+        
+        // Set hidden form fields
+        document.getElementById("latitude").value = lat;
+        document.getElementById("longitude").value = lng;
+        
+        // Reverse geocode to get address
+        geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+            if (status === "OK" && results[0]) {
+                const address = results[0].formatted_address;
+                document.getElementById("address").value = address;
+                document.getElementById("selected-address").textContent = address;
+                
+                // Show confirmation with pulse animation
+                const confirmation = document.getElementById("location-confirmation");
+                confirmation.style.display = "block";
+                confirmation.classList.add("pulse");
+                setTimeout(() => {
+                    confirmation.classList.remove("pulse");
+                }, 1000);
+                
+                // Show info window
+                infoWindow.setContent(`<div><strong>Selected Location</strong><br>${address}</div>`);
+                infoWindow.open(map, marker);
+            } else {
+                console.error("Geocoder failed due to: " + status);
+            }
+        });
+    }
+    
+    // Setup duration selection
+    function setupDurationSelection() {
+        const durationSelect = document.getElementById("event_duration");
+        const multiDaySection = document.getElementById("multi-day-section");
+        const timeSection = document.getElementById("time-section");
+        
+        durationSelect.addEventListener("change", (e) => {
+            const value = e.target.value;
+            
+            // Show or hide multi-day section
+            if (value === "multi") {
+                multiDaySection.style.display = "flex";
+                timeSection.style.display = "flex";
+                document.getElementById("end_date").required = true;
+            } else {
+                multiDaySection.style.display = "none";
+                document.getElementById("end_date").required = false;
+                
+                // Show or hide time section based on selection
+                if (value === "24") {
+                    timeSection.style.display = "none";
+                    document.getElementById("start_time").value = "";
+                    document.getElementById("start_time").required = false;
+                } else {
+                    timeSection.style.display = "flex";
+                    document.getElementById("start_time").required = true;
+                }
+            }
+        });
+    }
+    
+    // Setup image preview functionality
+    function setupImagePreview() {
+        const input = document.getElementById("images");
+        const previewContainer = document.getElementById("image-previews");
+        const cameraButton = document.getElementById("camera-button");
+        
+        input.addEventListener("change", function() {
+            previewContainer.innerHTML = "";
+            
+            if (this.files) {
+                Array.from(this.files).forEach(file => {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        const preview = document.createElement("img");
+                        preview.src = e.target.result;
+                        preview.className = "image-preview";
+                        previewContainer.appendChild(preview);
+                    }
+                    
+                    reader.readAsDataURL(file);
+                });
+            }
+        });
+        
+        // Camera button to trigger camera on mobile devices
+        cameraButton.addEventListener("click", function() {
+            input.setAttribute("capture", "environment");
+            input.click();
+            // Remove the attribute right after to allow regular file selection too
+            setTimeout(() => {
+                input.removeAttribute("capture");
+            }, 100);
+        });
+    }
+    
+    // Setup dark mode toggle
+    function setupDarkModeToggle() {
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+        const body = document.body;
+        
+        // Check saved preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            body.classList.add('dark-mode');
+            darkModeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+            if (map) {
+                map.setOptions({styles: darkMapStyle});
+            }
+        }
+        
+        darkModeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            
+            if (body.classList.contains('dark-mode')) {
+                localStorage.setItem('darkMode', 'true');
+                darkModeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+                if (map) {
+                    map.setOptions({styles: darkMapStyle});
+                }
+            } else {
+                localStorage.setItem('darkMode', 'false');
+                darkModeToggle.innerHTML = '<i class="fas fa-moon"></i> Dark Mode';
+                if (map) {
+                    map.setOptions({styles: []});
+                }
+            }
+        });
+    }
+    
+    function isDarkMode() {
+        return localStorage.getItem('darkMode') === 'true';
+    }
+    
+    // Dark mode style for Google Maps
+    const darkMapStyle = [
+        { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+        { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+        { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+        {
+            featureType: "administrative.locality",
+            elementType: "labels.text.fill",
+            stylers: [{ color: "#d59563" }],
+        },
+        {
+            featureType: "poi",
+            elementType: "labels.text.fill",
+            stylers: [{ color: "#d59563" }],
+        },
+        {
+            featureType: "poi.park",
+            elementType: "geometry",
+            stylers: [{ color: "#263c3f" }],
+        },
+        {
+            featureType: "poi.park",
+            elementType: "labels.text.fill",
+            stylers: [{ color: "#6b9a76" }],
+        },
+        {
+            featureType: "road",
+            elementType: "geometry",
+            stylers: [{ color: "#38414e" }],
+        },
+        {
+            featureType: "road",
+            elementType: "geometry.stroke",
+            stylers: [{ color: "#212a37" }],
+        },
+        {
+            featureType: "road",
+            elementType: "labels.text.fill",
+            stylers: [{ color: "#9ca5b3" }],
+        },
+        {
+            featureType: "road.highway",
+            elementType: "geometry",
+            stylers: [{ color: "#746855" }],
+        },
+        {
+            featureType: "road.highway",
+            elementType: "geometry.stroke",
+            stylers: [{ color: "#1f2835" }],
+        },
+        {
+            featureType: "road.highway",
+            elementType: "labels.text.fill",
+            stylers: [{ color: "#f3d19c" }],
+        },
+        {
+            featureType: "transit",
+            elementType: "geometry",
+            stylers: [{ color: "#2f3948" }],
+        },
+        {
+            featureType: "transit.station",
+            elementType: "labels.text.fill",
+            stylers: [{ color: "#d59563" }],
+        },
+        {
+            featureType: "water",
+            elementType: "geometry",
+            stylers: [{ color: "#17263c" }],
+        },
+        {
+            featureType: "water",
+            elementType: "labels.text.fill",
+            stylers: [{ color: "#515c6d" }],
+        },
+        {
+            featureType: "water",
+            elementType: "labels.text.stroke",
+            stylers: [{ color: "#17263c" }],
+        },
+    ];
+</script>
+{% endblock %} 

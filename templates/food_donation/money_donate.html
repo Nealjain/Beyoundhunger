@@ -4,118 +4,127 @@
 {% block title %}Donate Money - Beyond Hunger{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-lg-8 mx-auto">
-        <div class="card animate__animated animate__fadeIn">
-            <div class="card-header bg-primary text-white">
-                <h2 class="mb-0"><i class="fas fa-rupee-sign me-2"></i>Donate Money</h2>
-            </div>
-            <div class="card-body">
-                <p class="lead mb-4">Your financial support helps us continue our mission of feeding those in need. Thank you for your generosity!</p>
-                
-                <div class="row">
-                    <div class="col-md-6 mb-4">
-                        <div class="card h-100 donation-card">
-                            <div class="card-body text-center">
-                                <div class="mb-3 icon-hover">
-                                    <i class="fas fa-mobile-alt fa-3x text-primary"></i>
+<div class="container-fluid py-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'food_donation:home' %}">Home</a></li>
+                    <li class="breadcrumb-item">Donate</li>
+                    <li class="breadcrumb-item active" aria-current="page">Donate Money</li>
+                </ol>
+            </nav>
+            <div class="card animate__animated animate__fadeIn">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0"><i class="fas fa-rupee-sign me-2"></i>Donate Money</h2>
+                </div>
+                <div class="card-body">
+                    <p class="lead mb-4">Your financial support helps us continue our mission of feeding those in need. Thank you for your generosity!</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 donation-card">
+                                <div class="card-body text-center">
+                                    <div class="mb-3 icon-hover">
+                                        <i class="fas fa-mobile-alt fa-3x text-primary"></i>
+                                    </div>
+                                    <h4 class="card-title">UPI Payment / Bank Transfer</h4>
+                                    <div class="my-4 qr-hover">
+                                        <img src="{% static 'images/payment_qr.jpeg' %}" alt="Payment QR Code" class="img-fluid rounded">
+                                    </div>
+                                    <div class="alert alert-success upi-id-hover">
+                                        <strong>Scan to Pay with any UPI App</strong>
+                                    </div>
+                                    <p>Scan the QR code to make your donation</p>
                                 </div>
-                                <h4 class="card-title">UPI Payment / Bank Transfer</h4>
-                                <div class="my-4 qr-hover">
-                                    <img src="{% static 'images/payment_qr.jpeg' %}" alt="Payment QR Code" class="img-fluid rounded">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 donation-card">
+                                <div class="card-body text-center">
+                                    <div class="mb-3 icon-hover">
+                                        <i class="fas fa-university fa-3x text-primary"></i>
+                                    </div>
+                                    <h4 class="card-title">Bank Transfer</h4>
+                                    <div class="mt-4">
+                                        <table class="table table-bordered table-hover">
+                                            <tbody>
+                                                <tr class="hover-row">
+                                                    <th>Account Number</th>
+                                                    <td>4049390450</td>
+                                                </tr>
+                                                <tr class="hover-row">
+                                                    <th>IFSC Code</th>
+                                                    <td>KKBK0001386</td>
+                                                </tr>
+                                                <tr class="hover-row">
+                                                    <th>Branch</th>
+                                                    <td>MUMBAI-MANDVI</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
-                                <div class="alert alert-success upi-id-hover">
-                                    <strong>Scan to Pay with any UPI App</strong>
-                                </div>
-                                <p>Scan the QR code to make your donation</p>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="col-md-6 mb-4">
-                        <div class="card h-100 donation-card">
-                            <div class="card-body text-center">
-                                <div class="mb-3 icon-hover">
-                                    <i class="fas fa-university fa-3x text-primary"></i>
-                                </div>
-                                <h4 class="card-title">Bank Transfer</h4>
-                                <div class="mt-4">
-                                    <table class="table table-bordered table-hover">
-                                        <tbody>
-                                            <tr class="hover-row">
-                                                <th>Account Number</th>
-                                                <td>4049390450</td>
-                                            </tr>
-                                            <tr class="hover-row">
-                                                <th>IFSC Code</th>
-                                                <td>KKBK0001386</td>
-                                            </tr>
-                                            <tr class="hover-row">
-                                                <th>Branch</th>
-                                                <td>MUMBAI-MANDVI</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="alert alert-info mt-4 alert-hover">
+                        <h5><i class="fas fa-info-circle me-2"></i>Tax Benefits</h5>
+                        <p class="mb-0">All donations to Beyond Hunger are eligible for tax deduction under Section 80G. Please provide your PAN details after making a donation to receive the tax benefit certificate.</p>
                     </div>
-                </div>
-                
-                <div class="alert alert-info mt-4 alert-hover">
-                    <h5><i class="fas fa-info-circle me-2"></i>Tax Benefits</h5>
-                    <p class="mb-0">All donations to Beyond Hunger are eligible for tax deduction under Section 80G. Please provide your PAN details after making a donation to receive the tax benefit certificate.</p>
-                </div>
-                
-                <div class="card p-3 donation-confirmation-form mt-4">
-                    <h5 class="text-center mb-3"><i class="fas fa-check-circle text-success me-2"></i>Confirm Your Donation</h5>
-                    {% if user.is_authenticated %}
-                    <div id="donation-response-message"></div>
-                    <form id="money-donation-form">
-                        {% csrf_token %}
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label for="transaction_id" class="form-label">Transaction ID (if available)</label>
-                                <input type="text" class="form-control" id="transaction_id" name="transaction_id" placeholder="e.g., UPI reference">
+                    
+                    <div class="card p-3 donation-confirmation-form mt-4">
+                        <h5 class="text-center mb-3"><i class="fas fa-check-circle text-success me-2"></i>Confirm Your Donation</h5>
+                        {% if user.is_authenticated %}
+                        <div id="donation-response-message"></div>
+                        <form id="money-donation-form">
+                            {% csrf_token %}
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="transaction_id" class="form-label">Transaction ID (if available)</label>
+                                    <input type="text" class="form-control" id="transaction_id" name="transaction_id" placeholder="e.g., UPI reference">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="amount" class="form-label">Amount Donated ($)</label>
+                                    <input type="number" class="form-control" id="amount" name="amount" min="1" step="0.01" required>
+                                </div>
+                                <div class="col-md-12">
+                                    <label for="payment_method" class="form-label">Payment Method</label>
+                                    <select class="form-select" id="payment_method" name="payment_method">
+                                        <option value="upi">UPI</option>
+                                        <option value="bank_transfer">Bank Transfer</option>
+                                        <option value="cash">Cash</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <textarea class="form-control" rows="2" name="notes" placeholder="Any message (optional)"></textarea>
+                                </div>
+                                <div class="col-12 text-center">
+                                    <button type="submit" class="btn btn-success" id="submit-donation-btn">
+                                        <i class="fas fa-paper-plane me-2"></i>Submit Confirmation
+                                    </button>
+                                </div>
                             </div>
-                            <div class="col-md-6">
-                                <label for="amount" class="form-label">Amount Donated ($)</label>
-                                <input type="number" class="form-control" id="amount" name="amount" min="1" step="0.01" required>
-                            </div>
-                            <div class="col-md-12">
-                                <label for="payment_method" class="form-label">Payment Method</label>
-                                <select class="form-select" id="payment_method" name="payment_method">
-                                    <option value="upi">UPI</option>
-                                    <option value="bank_transfer">Bank Transfer</option>
-                                    <option value="cash">Cash</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <textarea class="form-control" rows="2" name="notes" placeholder="Any message (optional)"></textarea>
-                            </div>
-                            <div class="col-12 text-center">
-                                <button type="submit" class="btn btn-success" id="submit-donation-btn">
-                                    <i class="fas fa-paper-plane me-2"></i>Submit Confirmation
-                                </button>
-                            </div>
+                        </form>
+                        {% else %}
+                        <div class="text-center p-3">
+                            <p>You need to be logged in to confirm a donation.</p>
+                            <a href="{% url 'food_donation:login' %}?next={% url 'food_donation:money_donate' %}" class="btn btn-primary">
+                                <i class="fas fa-sign-in-alt me-2"></i>Login to Continue
+                            </a>
                         </div>
-                    </form>
-                    {% else %}
-                    <div class="text-center p-3">
-                        <p>You need to be logged in to confirm a donation.</p>
-                        <a href="{% url 'food_donation:login' %}?next={% url 'food_donation:money_donate' %}" class="btn btn-primary">
-                            <i class="fas fa-sign-in-alt me-2"></i>Login to Continue
+                        {% endif %}
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <p>For any questions about donations, please contact us at <a href="mailto:donations@beyondhunger.org" class="email-hover">donations@beyondhunger.org</a> or call <span class="phone-hover">+91 98765 43210</span>.</p>
+                        <a href="{% url 'food_donation:home' %}" class="btn btn-outline-primary mt-3 btn-hover">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Home
                         </a>
                     </div>
-                    {% endif %}
-                </div>
-                
-                <div class="text-center mt-4">
-                    <p>For any questions about donations, please contact us at <a href="mailto:donations@beyondhunger.org" class="email-hover">donations@beyondhunger.org</a> or call <span class="phone-hover">+91 98765 43210</span>.</p>
-                    <a href="{% url 'food_donation:home' %}" class="btn btn-outline-primary mt-3 btn-hover">
-                        <i class="fas fa-arrow-left me-2"></i>Back to Home
-                    </a>
                 </div>
             </div>
         </div>
@@ -273,4 +282,5 @@
         }
     });
 </script>
+</div>
 {% endblock %} 

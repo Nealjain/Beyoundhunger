@@ -91,4 +91,12 @@ urlpatterns = [
     # Donation receipt download URL
     path('donation/<int:donation_id>/receipt/', views.download_donation_receipt, name='download_donation_receipt'),
     path('money-donations/history/', views.money_donation_history, name='money_donation_history'),
+
+    # Pandal URLs
+    path('pandals/', views.pandal_map, name='pandal_map'),
+    path('pandals/add/', views.add_pandal, name='add_pandal'),
+    path('pandals/<int:pk>/', views.pandal_detail, name='pandal_detail'),
+    path('pandals/<int:pk>/verify/', views.verify_pandal, name='verify_pandal'),
+    path('admin/pandals/', views.admin_pandals, name='admin_pandals'),
+    path('test-map/', views.test_map, name='test_map'),
 ] 

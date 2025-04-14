@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from .models import (
     UserProfile, FoodDonation, Volunteer, DeliveryAssignment, 
     MarketplaceLister, MarketplaceItem, MarketplaceItemImage, 
-    FoodDonationImage, IDVerificationImage, MoneyDonation, ContactMessage, MarketplaceBid, MarketplaceChat, Notification
+    FoodDonationImage, IDVerificationImage, MoneyDonation, ContactMessage, MarketplaceBid, MarketplaceChat, Notification, FoodPandal, PandalImage
 )
 from django.utils import timezone
 from decimal import Decimal
@@ -22,7 +22,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
-from datetime import datetime
+from datetime import datetime, timedelta
 from PIL import Image
 from django.contrib.auth.decorators import user_passes_test
 import csv
@@ -32,6 +32,7 @@ from django.conf import settings
 from django.views.decorators.http import require_POST
 import uuid
 from .utils import send_money_donation_confirmation
+from django.contrib.admin.views.decorators import staff_member_required
 
 def home(request):
     # Get 5 most recent donations for the recent donations section
@@ -1890,3 +1891,125 @@ def donate_money(request):
             messages.error(request, 'Please provide both amount and payment method.')
             
     return redirect('profile')
+
+# Pandal views
+@login_required
+def pandal_map(request):
+    """View to display map of food pandals"""
+    pandals = FoodPandal.objects.filter(is_active=True)
+    return render(request, 'food_donation/pandal_map.html', {
+        'pandals': pandals,
+        'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY
+    })
+
+@login_required
+def add_pandal(request):
+    """View to add a new food pandal"""
+    if request.method == 'POST':
+        # Process form data
+        name = request.POST.get('name')
+        description = request.POST.get('description')
+        address = request.POST.get('address')
+        latitude = request.POST.get('latitude')
+        longitude = request.POST.get('longitude')
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
+        start_time = request.POST.get('start_time')
+        event_duration = request.POST.get('event_duration')
+        
+        # Validate required fields
+        if not all([name, description, address, latitude, longitude, start_date]):
+            messages.error(request, "Please fill all required fields.")
+            return redirect('food_donation:add_pandal')
+        
+        # Handle duration calculation
+        end_time = None
+        if event_duration and event_duration != 'multi' and start_time:
+            try:
+                # Parse start time
+                start_time_obj = datetime.strptime(start_time, '%H:%M').time()
+                
+                # Calculate end time based on duration hours
+                duration_hours = int(event_duration)
+                start_datetime = datetime.combine(datetime.today(), start_time_obj)
+                end_datetime = start_datetime + timedelta(hours=duration_hours)
+                end_time = end_datetime.time().strftime('%H:%M')
+            except (ValueError, TypeError):
+                # If any error in calculation, leave end_time as None
+                pass
+        
+        # For multi-day events without specific times
+        if event_duration == '24' or not start_time:
+            start_time = None
+            end_time = None
+        
+        # Create pandal
+        pandal = FoodPandal.objects.create(
+            name=name,
+            description=description,
+            address=address,
+            latitude=latitude,
+            longitude=longitude,
+            start_date=start_date,
+            end_date=end_date if end_date else None,
+            start_time=start_time if start_time else None,
+            end_time=end_time if end_time else None,
+            created_by=request.user
+        )
+        
+        # Handle images
+        images = request.FILES.getlist('images')
+        if not images:
+            messages.error(request, "At least one image is required for verification.")
+            pandal.delete()
+            return redirect('food_donation:add_pandal')
+        
+        for i, img in enumerate(images):
+            PandalImage.objects.create(
+                pandal=pandal,
+                image=img,
+                is_main_image=(i == 0)  # First image is the main image
+            )
+        
+        messages.success(request, "Food distribution point added successfully! It will be visible after verification.")
+        return redirect('food_donation:pandal_map')
+    
+    return render(request, 'food_donation/add_pandal.html', {
+        'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY
+    })
+
+@login_required
+def pandal_detail(request, pk):
+    """View to show details of a food pandal"""
+    pandal = get_object_or_404(FoodPandal, pk=pk)
+    return render(request, 'food_donation/pandal_detail.html', {
+        'pandal': pandal,
+        'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY
+    })
+
+@staff_member_required
+def verify_pandal(request, pk):
+    """View for admin to verify a pandal"""
+    pandal = get_object_or_404(FoodPandal, pk=pk)
+    pandal.is_verified = True
+    pandal.save()
+    messages.success(request, f"Food distribution point '{pandal.name}' has been verified.")
+    return redirect('food_donation:admin_pandals')
+
+@staff_member_required
+def admin_pandals(request):
+    """Admin view to manage pandals"""
+    pending_pandals = FoodPandal.objects.filter(is_verified=False, is_active=True)
+    verified_pandals = FoodPandal.objects.filter(is_verified=True, is_active=True)
+    
+    return render(request, 'food_donation/admin_pandals.html', {
+        'pending_pandals': pending_pandals,
+        'verified_pandals': verified_pandals
+    })
+
+@login_required
+def test_map(request):
+    """A test page to verify Google Maps functionality"""
+    return render(request, 'food_donation/test_map.html', {
+        'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY
+    })
