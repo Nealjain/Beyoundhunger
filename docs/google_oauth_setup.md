@@ -83,4 +83,4 @@ For production deployment:
 1. Add your production domain to the Authorized JavaScript origins and redirect URIs
 2. Update your OAuth consent screen with your production information
 3. Consider publishing your app if you want to allow all users to log in (not just test users)
-4. Use environment variables for your Client ID and Client Secret instead of hardcoding them 
+4. Use environment variables for your Client ID and Client Secret instead of hardcoding them
