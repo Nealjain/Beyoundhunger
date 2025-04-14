@@ -203,7 +203,7 @@ def contact(request):
         # Optional: Send email notification to admin
         try:
             admin_subject = f"New Contact Form Submission: {subject}"
-            admin_message = f"Name: {name}\nEmail: {email}\nPhone: {phone}\n\nMessage:\n{message}"
+            admin_message = fr"Name: {name}\nEmail: {email}\nPhone: {phone}\n\nMessage:\n{message}"
             admin_html = f"""
             <html>
             <head>
@@ -1566,7 +1566,7 @@ def send_message(request, item_pk):
                     if include_phone:
                         try:
                             profile = UserProfile.objects.get(user=request.user)
-                            sender_phone = f"\nPhone: {profile.phone}"
+                            sender_phone = fr"\nPhone: {profile.phone}"
                         except:
                             pass
                     
