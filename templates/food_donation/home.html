@@ -1,0 +1,180 @@
+{% extends 'food_donation/base.html' %}
+
+{% block title %}Home - Beyond Hunger{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section text-center animate__animated animate__fadeIn">
+    <div class="container">
+        <h1 class="display-4 mb-4 fw-bold">Welcome to Beyond Hunger</h1>
+        <p class="lead mb-4">Connecting food donors with those in need to reduce waste and fight hunger.</p>
+        <div class="mt-5 d-flex flex-column flex-sm-row justify-content-center gap-3">
+            <a href="{% url 'food_donation:donate' %}" class="btn btn-light btn-lg animate__animated animate__pulse animate__infinite animate__slow">
+                <i class="fas fa-hand-holding-heart me-2"></i>Donate Food
+            </a>
+            <a href="{% url 'food_donation:money_donate' %}" class="btn btn-outline-light btn-lg">
+                <i class="fas fa-rupee-sign me-2"></i>Donate Money
+            </a>
+            {% if user.is_authenticated %}
+            <a href="{% url 'food_donation:money_donation_history' %}" class="btn btn-outline-warning btn-lg">
+                <i class="fas fa-history me-2"></i>View My Donations
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="text-center mb-4 mb-md-5 animate-on-scroll">Our Impact</h2>
+        <div class="row text-center g-3">
+            <div class="col-md-4 animate-on-scroll">
+                <div class="stats-card bg-primary text-white rounded shadow p-4">
+                    <i class="fas fa-hand-holding-heart stats-icon"></i>
+                    <h3 class="display-4 fw-bold">{{ total_donations }}</h3>
+                    <p>Total Donations</p>
+                </div>
+            </div>
+            <div class="col-md-4 animate-on-scroll">
+                <div class="stats-card bg-success text-white rounded shadow p-4">
+                    <i class="fas fa-users stats-icon"></i>
+                    <h3 class="display-4 fw-bold">{{ total_volunteers }}</h3>
+                    <p>Active Volunteers</p>
+                </div>
+            </div>
+            <div class="col-md-4 animate-on-scroll">
+                <div class="stats-card bg-info text-white rounded shadow p-4">
+                    <i class="fas fa-heart stats-icon"></i>
+                    <h3 class="display-4 fw-bold">{{ total_requests }}</h3>
+                    <p>Lives Impacted</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Donor Showcase Section -->
+{% if donor_showcase %}
+<section class="py-5" style="background-color: #f8f9fa;">
+    <div class="container">
+        <h2 class="text-center mb-4 mb-md-5 animate-on-scroll">Our Generous Donors</h2>
+        
+        <div id="donorShowcaseCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                {% for donor in donor_showcase %}
+                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                    <div class="row justify-content-center align-items-center">
+                        <div class="col-md-4 text-center">
+                            <div class="donor-avatar mb-3">
+                                <img src="{{ donor.photo_url }}" alt="{{ donor.name }}" class="img-fluid rounded-circle" style="width: 200px; height: 200px; object-fit: cover; border: 5px solid #4CAF50;">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="donor-card bg-white p-4 rounded shadow-sm">
+                                <h4 class="donor-name">{{ donor.name }}</h4>
+                                <p class="donor-donation">
+                                    <i class="fas fa-utensils text-primary me-2"></i>Donated: <strong>{{ donor.food_type }}</strong> ({{ donor.quantity }})
+                                </p>
+                                <p class="donor-date text-muted">
+                                    <i class="fas fa-calendar-alt me-2"></i>{{ donor.date|date:"F d, Y" }}
+                                </p>
+                                <p class="donor-quote">
+                                    <em>"Thank you for the opportunity to make a difference in our community!"</em>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#donorShowcaseCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon bg-primary rounded-circle p-3" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#donorShowcaseCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon bg-primary rounded-circle p-3" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+        </div>
+        
+        <div class="text-center mt-4">
+            <a href="{% url 'food_donation:donate' %}" class="btn btn-primary">
+                <i class="fas fa-hand-holding-heart me-2"></i>Become a Donor
+            </a>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Recent Donations Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center mb-4 mb-md-5 animate-on-scroll">Recent Donations</h2>
+        <div class="row g-3">
+            {% for donation in recent_donations %}
+            <div class="col-md-4 animate-on-scroll">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-utensils me-2 text-primary"></i>{{ donation.food_type }}
+                        </h5>
+                        <p class="card-text">
+                            <strong>Quantity:</strong> {{ donation.quantity }}<br>
+                            <strong>Status:</strong> 
+                            <span class="badge {% if donation.status == 'delivered' %}bg-success{% elif donation.status == 'pending' %}bg-warning{% else %}bg-primary{% endif %}">
+                                {{ donation.get_status_display }}
+                            </span><br>
+                            <strong>Date:</strong> {{ donation.created_at|date:"M d, Y" }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center animate-on-scroll">
+                <p class="text-muted">No recent donations to display. Be the first to donate!</p>
+                <a href="{% url 'food_donation:donate' %}" class="btn btn-primary mt-3">
+                    <i class="fas fa-plus-circle me-2"></i>Make a Donation
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="text-center mb-4 mb-md-5 animate-on-scroll">How It Works</h2>
+        <div class="row g-3">
+            <div class="col-md-4 animate-on-scroll">
+                <div class="text-center">
+                    <div class="stats-card bg-warning text-dark rounded shadow p-4">
+                        <i class="fas fa-donate fa-4x mb-3"></i>
+                        <h4>1. Donate Food</h4>
+                        <p>Register as a donor and list your available food items for donation.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 animate-on-scroll">
+                <div class="text-center">
+                    <div class="stats-card bg-danger text-white rounded shadow p-4">
+                        <i class="fas fa-truck fa-4x mb-3"></i>
+                        <h4>2. Volunteer Delivery</h4>
+                        <p>Our volunteers pick up and deliver the food to those who need it.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 animate-on-scroll">
+                <div class="text-center">
+                    <div class="stats-card bg-purple text-white rounded shadow p-4" style="background-color: #8a2be2;">
+                        <i class="fas fa-heart fa-4x mb-3"></i>
+                        <h4>3. Help Others</h4>
+                        <p>Your donation helps reduce food waste and supports those in need.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %} 

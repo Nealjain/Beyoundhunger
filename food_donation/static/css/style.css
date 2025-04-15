@@ -1,0 +1,26 @@
+/* Network Status Indicator */
+.network-status {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    background-color: #dc3545;
+    color: white;
+    text-align: center;
+    padding: 8px;
+    font-size: 14px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.offline-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.offline-indicator i {
+    font-size: 16px;
+} 

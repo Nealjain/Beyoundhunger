@@ -1,0 +1,102 @@
+/* Admin Forms Styling */
+
+/* Prevent text selection by default */
+body, h1, h2, h3, h4, h5, h6, p, span, div, a, button, 
+table, th, td, tr, thead, tbody, 
+label, input, select, textarea, .help-text, 
+.success-message, .error-message {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+}
+
+/* Only allow selection of form fields for input */
+textarea, input[type="text"], input[type="email"], 
+input[type="number"], input[type="password"], 
+input[type="tel"], input[type="url"] {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+}
+
+.form-row {
+  margin-bottom: 15px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+/* User info messages */
+.success-message {
+  color: #28a745;
+  font-weight: bold;
+  padding: 5px 10px;
+  background-color: rgba(40, 167, 69, 0.1);
+  border-radius: 4px;
+  margin: 10px 0;
+}
+
+.error-message {
+  color: #dc3545;
+  font-weight: bold;
+  padding: 5px 10px;
+  background-color: rgba(220, 53, 69, 0.1);
+  border-radius: 4px;
+  margin: 10px 0;
+}
+
+/* New user fields section */
+#new-user-fields {
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-top: 15px;
+  background-color: #f8f9fa;
+}
+
+#new-user-fields h3 {
+  margin-top: 0;
+  color: #495057;
+}
+
+/* Form controls */
+.vTextField {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+}
+
+.help-text {
+  color: #6c757d;
+  font-size: 0.875rem;
+  margin-top: 5px;
+}
+
+/* Submit button */
+.submit-row {
+  margin-top: 20px;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  border-color: #007bff;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background-color: #0069d9;
+  border-color: #0062cc;
+}
+
+.btn-primary:disabled {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  cursor: not-allowed;
+} 

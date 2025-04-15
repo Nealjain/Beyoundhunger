@@ -1,0 +1,158 @@
+{% extends 'food_donation/base.html' %}
+
+{% block title %}Contact Messages - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 d-md-block sidebar">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Admin Dashboard</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'food_donation:admin_dashboard' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tachometer-alt me-2"></i>Overview
+                    </a>
+                    <a href="{% url 'food_donation:admin_marketplace_listers' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-store me-2"></i>Marketplace Listers
+                    </a>
+                    <a href="{% url 'food_donation:admin_contact_messages' %}" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-envelope me-2"></i>Contact Messages
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2"><i class="fas fa-envelope me-2"></i>Contact Messages</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            Filter by Status
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="filterDropdown">
+                            <li><a class="dropdown-item {% if not current_status %}active{% endif %}" href="{% url 'food_donation:admin_contact_messages' %}">All Messages</a></li>
+                            {% for status_code, status_name in status_choices %}
+                            <li><a class="dropdown-item {% if current_status == status_code %}active{% endif %}" href="{% url 'food_donation:admin_contact_messages' %}?status={{ status_code }}">{{ status_name }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            {% if contact_messages %}
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Subject</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for message in contact_messages %}
+                        <tr class="{% if message.status == 'new' %}table-primary{% elif message.status == 'in_progress' %}table-warning{% elif message.status == 'resolved' %}table-success{% endif %}">
+                            <td>{{ message.created_at|date:"M d, Y H:i" }}</td>
+                            <td>{{ message.name }}</td>
+                            <td><a href="mailto:{{ message.email }}">{{ message.email }}</a></td>
+                            <td>{{ message.subject }}</td>
+                            <td>
+                                {% if message.status == 'new' %}
+                                <span class="badge bg-primary">New</span>
+                                {% elif message.status == 'in_progress' %}
+                                <span class="badge bg-warning">In Progress</span>
+                                {% elif message.status == 'resolved' %}
+                                <span class="badge bg-success">Resolved</span>
+                                {% elif message.status == 'closed' %}
+                                <span class="badge bg-secondary">Closed</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#messageModal{{ message.id }}">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Modal for each message -->
+                        <div class="modal fade" id="messageModal{{ message.id }}" tabindex="-1" aria-labelledby="messageModalLabel{{ message.id }}" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="messageModalLabel{{ message.id }}">Message from {{ message.name }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="card mb-3">
+                                            <div class="card-header">
+                                                <strong>Subject:</strong> {{ message.subject }}
+                                            </div>
+                                            <div class="card-body">
+                                                <p class="card-text">{{ message.message|linebreaks }}</p>
+                                            </div>
+                                            <div class="card-footer bg-light">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <small class="text-muted">
+                                                            <strong>Contact:</strong> <a href="mailto:{{ message.email }}">{{ message.email }}</a>
+                                                            {% if message.phone %}
+                                                            | <a href="tel:{{ message.phone }}">{{ message.phone }}</a>
+                                                            {% endif %}
+                                                        </small>
+                                                    </div>
+                                                    <div class="col-md-6 text-end">
+                                                        <small class="text-muted">Submitted on {{ message.created_at|date:"M d, Y H:i" }}</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <form method="post" action="{% url 'food_donation:update_contact_message_status' message.id %}">
+                                            {% csrf_token %}
+                                            <div class="mb-3">
+                                                <label for="status" class="form-label">Update Status</label>
+                                                <select class="form-select" id="status" name="status">
+                                                    {% for status_code, status_name in status_choices %}
+                                                    <option value="{{ status_code }}" {% if message.status == status_code %}selected{% endif %}>{{ status_name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">Update Status</button>
+                                            
+                                            {% if message.email %}
+                                            <a href="mailto:{{ message.email }}?subject=Re: {{ message.subject }}" class="btn btn-outline-secondary ms-2">
+                                                <i class="fas fa-reply"></i> Reply by Email
+                                            </a>
+                                            {% endif %}
+                                            
+                                            {% if message.phone %}
+                                            <a href="tel:{{ message.phone }}" class="btn btn-outline-secondary ms-2">
+                                                <i class="fas fa-phone"></i> Call
+                                            </a>
+                                            {% endif %}
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info mt-4">
+                <i class="fas fa-info-circle me-2"></i> No contact messages found.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

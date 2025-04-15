@@ -1,0 +1,193 @@
+{% extends 'food_donation/base.html' %}
+
+{% block title %}Donate Food - Beyond Hunger{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0"><i class="fas fa-hand-holding-heart me-2"></i>Donate Food</h2>
+            </div>
+            <div class="card-body">
+                <p class="lead mb-4">Thank you for considering a food donation. Your contribution will help those in need.</p>
+                
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="food_type" class="form-label">Food Type</label>
+                        <select class="form-select" id="food_type" name="food_type" required>
+                            <option value="" disabled selected>Select food type</option>
+                            <option value="Fruits">Fruits</option>
+                            <option value="Vegetables">Vegetables</option>
+                            <option value="Bread">Bread</option>
+                            <option value="Canned Goods">Canned Goods</option>
+                            <option value="Grains">Grains</option>
+                            <option value="Dairy">Dairy</option>
+                            <option value="Meat">Meat</option>
+                            <option value="Prepared Meals">Prepared Meals</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <div class="form-text">Select the type of food you're donating</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Quantity</label>
+                        <div class="input-group">
+                            <input type="number" min="1" class="form-control" id="quantity" name="quantity" required>
+                            <select class="form-select" id="quantity_unit" name="quantity_unit" style="max-width: 120px;">
+                                <option value="kg">kg</option>
+                                <option value="items">items</option>
+                                <option value="boxes">boxes</option>
+                                <option value="meals">meals</option>
+                            </select>
+                        </div>
+                        <div class="form-text">How much food are you donating?</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="expiry_date" class="form-label">Expiry Date</label>
+                        <input type="date" class="form-control" id="expiry_date" name="expiry_date" min="{{ current_date }}" required>
+                        <div class="form-text">When will this food expire?</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="pickup_address" class="form-label">Pickup Address</label>
+                        <div class="input-group mb-2">
+                            <textarea class="form-control" id="pickup_address" name="pickup_address" rows="3" required>{{ initial_data.pickup_address }}</textarea>
+                            <button type="button" class="btn btn-outline-secondary" id="get-location">
+                                <i class="fas fa-map-marker-alt"></i> Use My Location
+                            </button>
+                        </div>
+                        <div id="location-status" class="form-text"></div>
+                        <div class="form-text">Where can our volunteers pick up the food?</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="pickup_date" class="form-label">Pickup Date</label>
+                        <input type="date" class="form-control" id="pickup_date" name="pickup_date" min="{{ current_date }}" required>
+                        <div class="form-text">When can our volunteers pick up the food?</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="food_images" class="form-label">Food Photos</label>
+                        <input type="file" class="form-control" id="food_images" name="food_images" accept="image/*" multiple required>
+                        <div class="form-text">Please upload photos of the food you're donating. This helps us verify quality and condition.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Additional Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                        <div class="form-text">Any special instructions or additional information?</div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg animate__animated animate__pulse">
+                            <i class="fas fa-heart me-2"></i>Submit Donation
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="alert alert-info mt-4">
+                    <strong><i class="fas fa-info-circle me-2"></i>Want to make a monetary donation?</strong>
+                    <p class="mb-0">If you'd like to support us financially, please visit our <a href="{% url 'food_donation:money_donate' %}" class="alert-link">Money Donation</a> page.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const locationButton = document.getElementById('get-location');
+    const addressField = document.getElementById('pickup_address');
+    const statusDiv = document.getElementById('location-status');
+    
+    // Auto-populate the form fields with today's date and tomorrow's date
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    document.getElementById('pickup_date').valueAsDate = tomorrow;
+    
+    // Set expiry date to 7 days from now by default
+    const nextWeek = new Date(today);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    document.getElementById('expiry_date').valueAsDate = nextWeek;
+    
+    // Location button handler
+    locationButton.addEventListener('click', function() {
+        if (!navigator.geolocation) {
+            statusDiv.textContent = 'Geolocation is not supported by your browser';
+            return;
+        }
+        
+        statusDiv.textContent = 'Locating you...';
+        locationButton.disabled = true;
+        
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            
+            // Use reverse geocoding to get address
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`)
+                .then(response => response.json())
+                .then(data => {
+                    // Build address from components
+                    const address = data.display_name;
+                    
+                    // Update the address field
+                    if (addressField.value) {
+                        // If there's already an address, ask if they want to replace it
+                        if (confirm('Replace your existing address with your current location?')) {
+                            addressField.value = address;
+                        }
+                    } else {
+                        addressField.value = address;
+                    }
+                    
+                    statusDiv.textContent = 'Location found! Address updated.';
+                    statusDiv.classList.add('text-success');
+                    setTimeout(() => {
+                        statusDiv.textContent = '';
+                        statusDiv.classList.remove('text-success');
+                    }, 3000);
+                })
+                .catch(error => {
+                    statusDiv.textContent = 'Could not fetch address from your location';
+                    console.error('Error fetching address:', error);
+                })
+                .finally(() => {
+                    locationButton.disabled = false;
+                });
+        }, function(error) {
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    statusDiv.textContent = 'You denied the location permission';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    statusDiv.textContent = 'Location information is unavailable';
+                    break;
+                case error.TIMEOUT:
+                    statusDiv.textContent = 'The request to get your location timed out';
+                    break;
+                default:
+                    statusDiv.textContent = 'An unknown error occurred';
+                    break;
+            }
+            locationButton.disabled = false;
+        });
+    });
+
+    // Combine the quantity and unit when the form is submitted
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const quantity = document.getElementById('quantity').value;
+        const unit = document.getElementById('quantity_unit').value;
+        
+        // Update the quantity field to include the unit
+        document.getElementById('quantity').value = `${quantity} ${unit}`;
+    });
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,320 @@
+{% extends "food_donation/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <!-- Event Details -->
+        <div class="col-lg-8">
+            <div class="card shadow-lg mb-4 animate-on-scroll">
+                <!-- Event Image Banner -->
+                <div class="position-relative">
+                    {% if event.image %}
+                    <div class="event-image-container" style="height: 300px; overflow: hidden;">
+                        <img src="{{ event.image.url }}" alt="{{ event.name }}" class="card-img-top img-fluid" style="object-fit: cover; width: 100%; height: 100%;">
+                    </div>
+                    {% else %}
+                    <div class="event-image-container bg-light" style="height: 300px; overflow: hidden;">
+                        <div class="d-flex justify-content-center align-items-center h-100">
+                            <img src="{% static 'food_donation/img/bhandara-placeholder.jpg' %}" alt="Bhandara" class="img-fluid" style="max-height: 100%; max-width: 100%; object-fit: cover;">
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Event Status -->
+                    <div class="position-absolute top-0 end-0 m-3">
+                        {% if event.is_active %}
+                            {% if event.start_datetime > current_datetime %}
+                            <span class="badge bg-primary p-2"><i class="fas fa-clock me-1"></i> Upcoming</span>
+                            {% elif event.end_datetime > current_datetime %}
+                            <span class="badge bg-success p-2"><i class="fas fa-calendar-check me-1"></i> Ongoing</span>
+                            {% else %}
+                            <span class="badge bg-secondary p-2"><i class="fas fa-calendar-times me-1"></i> Completed</span>
+                            {% endif %}
+                        {% else %}
+                        <span class="badge bg-danger p-2"><i class="fas fa-exclamation-circle me-1"></i> Cancelled</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card-body p-4">
+                    <h2 class="card-title mb-3">{{ event.name }}</h2>
+                    <div class="d-flex mb-4 flex-wrap">
+                        <div class="me-4 mb-2">
+                            <i class="far fa-calendar text-primary me-2"></i>
+                            <span>{{ event.start_datetime|date:"D, M d, Y" }}</span>
+                        </div>
+                        <div class="me-4 mb-2">
+                            <i class="far fa-clock text-primary me-2"></i>
+                            <span>{{ event.start_datetime|date:"g:i A" }} - {{ event.end_datetime|date:"g:i A" }}</span>
+                        </div>
+                        {% if event.is_recurring %}
+                        <div class="mb-2">
+                            <i class="fas fa-redo text-primary me-2"></i>
+                            <span>{{ event.recurrence_pattern }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <h5><i class="fas fa-align-left text-primary me-2"></i>Description</h5>
+                        <p class="card-text">{{ event.description }}</p>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-utensils text-primary me-2"></i>Food Items</h5>
+                            <p>{{ event.food_items }}</p>
+                        </div>
+                        {% if event.expected_attendees %}
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-users text-primary me-2"></i>Expected Attendees</h5>
+                            <p>{{ event.expected_attendees }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    {% if event.special_instructions %}
+                    <div class="mb-4">
+                        <h5><i class="fas fa-info-circle text-primary me-2"></i>Special Instructions</h5>
+                        <p>{{ event.special_instructions }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if event.volunteers_needed %}
+                    <div class="alert alert-info mb-4">
+                        <h5 class="alert-heading"><i class="fas fa-hands-helping me-2"></i>Volunteers Needed!</h5>
+                        <p>This event needs <strong>{{ event.volunteers_count }}</strong> volunteers.</p>
+                        {% if event.volunteer_tasks %}
+                        <p><strong>Volunteer Tasks:</strong> {{ event.volunteer_tasks }}</p>
+                        {% endif %}
+                        <hr>
+                        <div class="text-center">
+                            <a href="#volunteerModal" data-bs-toggle="modal" class="btn btn-primary">
+                                <i class="fas fa-user-plus me-2"></i>Volunteer for this Event
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Social Sharing -->
+                    <div class="border-top pt-4">
+                        <h5 class="mb-3"><i class="fas fa-share-alt text-primary me-2"></i>Share This Event</h5>
+                        <div class="d-flex">
+                            <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank" class="btn btn-outline-primary me-2">
+                                <i class="fab fa-facebook-f"></i>
+                            </a>
+                            <a href="https://twitter.com/intent/tweet?text=Join%20this%20Bhandara%20event%20-%20{{ event.name|urlencode }}&url={{ request.build_absolute_uri }}" target="_blank" class="btn btn-outline-info me-2">
+                                <i class="fab fa-twitter"></i>
+                            </a>
+                            <a href="https://wa.me/?text=Join%20this%20Bhandara%20event%20-%20{{ event.name|urlencode }}%20{{ request.build_absolute_uri }}" target="_blank" class="btn btn-outline-success me-2">
+                                <i class="fab fa-whatsapp"></i>
+                            </a>
+                            <a href="mailto:?subject=Join%20this%20Bhandara%20event%20-%20{{ event.name|urlencode }}&body=I%20thought%20you%20might%20be%20interested%20in%20this%20Bhandara%20event:%20{{ request.build_absolute_uri }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-envelope"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Organizer Info -->
+            <div class="card shadow-lg mb-4 animate-on-scroll">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-user me-2"></i>Organizer</h5>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ event.organizer_name }}</h5>
+                    {% if event.organizer_type %}
+                    <p class="card-text mb-2"><strong>Type:</strong> {{ event.organizer_type }}</p>
+                    {% endif %}
+                    {% if event.contact_phone %}
+                    <p class="card-text mb-2">
+                        <i class="fas fa-phone-alt text-primary me-2"></i>
+                        <a href="tel:{{ event.contact_phone }}">{{ event.contact_phone }}</a>
+                    </p>
+                    {% endif %}
+                    {% if event.organizer_email %}
+                    <p class="card-text">
+                        <i class="fas fa-envelope text-primary me-2"></i>
+                        <a href="mailto:{{ event.organizer_email }}">{{ event.organizer_email }}</a>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Location -->
+            <div class="card shadow-lg mb-4 animate-on-scroll">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Location</h5>
+                </div>
+                <div class="card-body">
+                    <address class="mb-3">
+                        {{ event.address }}<br>
+                        {{ event.city }}, {{ event.state }} {{ event.postal_code }}
+                    </address>
+                    <div id="map" style="height: 250px;" class="mb-3 border rounded"></div>
+                    <a href="{{ event.get_google_maps_url }}" target="_blank" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-directions me-2"></i>Get Directions
+                    </a>
+                </div>
+            </div>
+
+            <!-- Calendar Add -->
+            <div class="card shadow-lg mb-4 animate-on-scroll">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="far fa-calendar-plus me-2"></i>Add to Calendar</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="https://www.google.com/calendar/render?action=TEMPLATE&text={{ event.name|urlencode }}&dates={{ event.start_datetime|date:'Ymd\THis' }}/{{ event.end_datetime|date:'Ymd\THis' }}&details={{ event.description|urlencode }}&location={{ event.address|urlencode }}%20{{ event.city|urlencode }}%2C%20{{ event.state|urlencode }}%20{{ event.pincode|urlencode }}" target="_blank" class="btn btn-outline-danger">
+                            <i class="fab fa-google me-2"></i>Google Calendar
+                        </a>
+                        <a href="webcal://{{ request.get_host }}{% url 'food_donation:event_ical' event.id %}" class="btn btn-outline-secondary">
+                            <i class="far fa-calendar-alt me-2"></i>iCal/Outlook
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Similar Events -->
+    {% if similar_events %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <h3 class="mb-4 border-bottom pb-2">Other Bhandara Events Nearby</h3>
+            <div class="row">
+                {% for similar in similar_events %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow hover-shadow">
+                        {% if similar.image %}
+                        <img src="{{ similar.image.url }}" class="card-img-top" alt="{{ similar.name }}" style="height: 150px; object-fit: cover;">
+                        {% else %}
+                        <div class="bg-light text-center py-4">
+                            <i class="fas fa-utensils fa-3x text-muted"></i>
+                        </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ similar.name }}</h5>
+                            <p class="card-text small">{{ similar.start_datetime|date:"M d, Y • g:i A" }}</p>
+                            <p class="card-text text-truncate">{{ similar.description }}</p>
+                        </div>
+                        <div class="card-footer bg-white">
+                            <a href="{% url 'food_donation:bhandara_detail' similar.id %}" class="btn btn-sm btn-outline-primary">View Details</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Volunteer Modal -->
+<div class="modal fade" id="volunteerModal" tabindex="-1" aria-labelledby="volunteerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="volunteerModalLabel">Volunteer for {{ event.name }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="volunteerForm" action="{% url 'food_donation:volunteer_signup' event.id %}" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="volunteerName" class="form-label">Your Name</label>
+                        <input type="text" class="form-control" id="volunteerName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="volunteerEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="volunteerEmail" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="volunteerPhone" class="form-label">Phone</label>
+                        <input type="tel" class="form-control" id="volunteerPhone" name="phone" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="volunteerAvailability" class="form-label">Availability</label>
+                        <select class="form-select" id="volunteerAvailability" name="availability" required>
+                            <option value="">Select your availability</option>
+                            <option value="Full Event">Full Event</option>
+                            <option value="Morning Only">Morning Only</option>
+                            <option value="Afternoon Only">Afternoon Only</option>
+                            <option value="Evening Only">Evening Only</option>
+                            <option value="Flexible">Flexible</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="volunteerExperience" class="form-label">Previous Experience (optional)</label>
+                        <textarea class="form-control" id="volunteerExperience" name="experience" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="volunteerMessage" class="form-label">Message (optional)</label>
+                        <textarea class="form-control" id="volunteerMessage" name="message" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" form="volunteerForm" class="btn btn-primary">Sign Up as Volunteer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+    function initMap() {
+        const latLng = {
+            lat: {{ event.latitude|floatformat:6 }}, 
+            lng: {{ event.longitude|floatformat:6 }}
+        };
+        
+        const map = new google.maps.Map(document.getElementById("map"), {
+            center: latLng,
+            zoom: 15,
+            mapTypeControl: true,
+            fullscreenControl: true,
+        });
+        
+        const marker = new google.maps.Marker({
+            position: latLng,
+            map: map,
+            title: "{{ event.name }}",
+            animation: google.maps.Animation.DROP
+        });
+        
+        const infoWindow = new google.maps.InfoWindow({
+            content: `
+                <div style="width: 200px;">
+                    <h6 style="margin-bottom: 5px;">{{ event.name }}</h6>
+                    <p style="font-size: 12px; margin-bottom: 5px;">{{ event.address }}</p>
+                    <p style="font-size: 12px; margin-bottom: 0;">{{ event.city }}, {{ event.state }}</p>
+                </div>
+            `
+        });
+        
+        marker.addListener("click", () => {
+            infoWindow.open(map, marker);
+        });
+    }
+    
+    // Share buttons functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const shareButtons = document.querySelectorAll('.share-btn');
+        shareButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.open(this.href, 'shareWindow', 'width=600,height=400');
+            });
+        });
+    });
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initMap" async defer></script>
+{% endblock %}
+{% endblock %} 

@@ -1,0 +1,11 @@
+# Core requirements for development
+Django>=5.0.0,<5.1.0
+pillow
+python-dotenv
+django-allauth>=0.58.0,<0.60.0
+djangorestframework>=3.14.0,<4.0.0
+requests
+django-cors-headers>=4.3.0,<5.0.0
+whitenoise
+six
+reportlab 

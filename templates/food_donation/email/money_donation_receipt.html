@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="color-scheme" content="light dark">
+    <meta name="supported-color-schemes" content="light dark">
+    <title>Donation Receipt</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            -webkit-text-size-adjust: none;
+            user-select: text;
+            -webkit-user-select: text;
+        }
+        
+        /* Dark mode adjustments */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #1e1e1e;
+                color: #e0e0e0;
+            }
+            .receipt {
+                background-color: #2d2d2d !important;
+                border-color: #444 !important;
+            }
+            .receipt-row {
+                border-bottom-color: #444 !important;
+            }
+            .receipt-header, .receipt-footer {
+                border-color: #3a6e3c !important;
+            }
+            .amount {
+                color: #6abf6e !important;
+            }
+            .stamp {
+                color: #6abf6e !important;
+                border-color: #6abf6e !important;
+            }
+            .footer {
+                background-color: #2d2d2d !important;
+                color: #999 !important;
+            }
+            .header {
+                background-color: #3a6e3c !important;
+            }
+            .receipt-number {
+                color: #ccc !important;
+            }
+            a {
+                color: #6abf6e !important;
+            }
+        }
+        
+        .header {
+            background-color: #4caf50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .content {
+            padding: 20px;
+        }
+        
+        .footer {
+            background-color: #f8f9fa;
+            padding: 15px;
+            text-align: center;
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .receipt {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            background-color: #fff;
+        }
+        
+        .receipt-header {
+            border-bottom: 2px solid #4caf50;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .receipt-row:last-child {
+            border-bottom: none;
+            font-weight: bold;
+        }
+        
+        .receipt-footer {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 2px solid #4caf50;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .amount {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4caf50;
+        }
+        
+        .receipt-number {
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .stamp {
+            text-align: center;
+            margin: 20px 0;
+            padding: 10px;
+            border: 2px dashed #4caf50;
+            color: #4caf50;
+            font-weight: bold;
+            transform: rotate(-5deg);
+            width: 150px;
+            cursor: default;
+        }
+        
+        /* Make images draggable */
+        img {
+            -webkit-user-drag: element;
+            user-drag: element;
+        }
+        
+        /* Ensure text is selectable */
+        p, span, div, h1, h2, h3 {
+            user-select: text;
+            -webkit-user-select: text;
+            cursor: text;
+        }
+        
+        /* Style links */
+        a {
+            color: #4caf50;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Make the entire receipt printable */
+        @media print {
+            body {
+                color: #000;
+                background: #fff;
+            }
+            .receipt {
+                border: 1px solid #000;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Official Donation Receipt</h1>
+    </div>
+    <div class="content">
+        <p>Dear {{ user.first_name|default:user.username }},</p>
+        
+        <p>Thank you for your generous donation to Beyond Hunger. This email serves as your official receipt for tax purposes.</p>
+        
+        <div class="receipt">
+            <div class="receipt-header">
+                <h2>RECEIPT</h2>
+                <p class="receipt-number">Receipt Number: {{ receipt_number }}</p>
+                <p>Date: {{ donation.created_at|date:"F j, Y" }}</p>
+            </div>
+            
+            <div class="receipt-row">
+                <span>Donor Name:</span>
+                <span>{{ user.get_full_name|default:user.username }}</span>
+            </div>
+            <div class="receipt-row">
+                <span>Donor Email:</span>
+                <span>{{ user.email }}</span>
+            </div>
+            <div class="receipt-row">
+                <span>Transaction ID:</span>
+                <span>{{ donation.transaction_id }}</span>
+            </div>
+            <div class="receipt-row">
+                <span>Payment Method:</span>
+                <span>{{ donation.get_payment_method_display }}</span>
+            </div>
+            <div class="receipt-row">
+                <span>Donation Amount:</span>
+                <span class="amount">${{ donation.amount }}</span>
+            </div>
+            
+            <div class="receipt-footer">
+                <p>Beyond Hunger is a registered non-profit organization.</p>
+                <p>This donation may be tax-deductible. Please consult with your tax advisor.</p>
+                <div class="stamp">PAYMENT ACCEPTED</div>
+            </div>
+        </div>
+        
+        <p>On behalf of all the people we serve, thank you for your support!</p>
+        
+        <p>Need assistance? Contact us at <a href="mailto:support@beyondhunger.org">support@beyondhunger.org</a></p>
+        
+        <p>Sincerely,<br>
+        The Beyond Hunger Team</p>
+    </div>
+    <div class="footer">
+        <p>This is an official receipt. Please save it for your tax records.</p>
+        <p>&copy; {{ donation.created_at|date:"Y" }} Beyond Hunger. All rights reserved.</p>
+        <p><small>You can print this receipt or save it as a PDF for your records.</small></p>
+    </div>
+</body>
+</html> 

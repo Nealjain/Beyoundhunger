@@ -1,0 +1,103 @@
+{% extends 'food_donation/base.html' %}
+{% load static %}
+
+{% block title %}Marketplace Lister Status - Beyond Hunger{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'food_donation:home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'food_donation:marketplace' %}">Marketplace</a></li>
+            <li class="breadcrumb-item active">Lister Status</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Marketplace Lister Status</h2>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-user-circle fa-4x text-primary"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h4 class="mb-0">{{ lister.user.get_full_name|default:lister.user.username }}</h4>
+                            <p class="text-muted mb-0">Application submitted on {{ lister.created_at|date:"F d, Y" }}</p>
+                        </div>
+                    </div>
+
+                    {% if lister.status == 'pending' %}
+                        <div class="alert alert-warning">
+                            <h5 class="alert-heading"><i class="fas fa-hourglass-half me-2"></i>Application Pending</h5>
+                            <p>Your application to become a marketplace lister is currently under review.</p>
+                            <p class="mb-0">We typically process applications within 1-2 business days. You'll be notified by email once a decision has been made.</p>
+                        </div>
+                    {% elif lister.status == 'approved' %}
+                        <div class="alert alert-success">
+                            <h5 class="alert-heading"><i class="fas fa-check-circle me-2"></i>Application Approved!</h5>
+                            <p>Congratulations! Your application to become a marketplace lister has been approved.</p>
+                            <p class="mb-0">You can now create listings in our marketplace. Thank you for joining our community!</p>
+                        </div>
+                        <div class="mt-3 d-grid gap-2 d-md-flex justify-content-md-center">
+                            <a href="{% url 'food_donation:create_marketplace_item' %}" class="btn btn-primary"><i class="fas fa-plus-circle me-2"></i>Create a New Listing</a>
+                            <a href="{% url 'food_donation:my_marketplace_items' %}" class="btn btn-outline-primary"><i class="fas fa-list me-2"></i>View My Listings</a>
+                        </div>
+                    {% elif lister.status == 'rejected' %}
+                        <div class="alert alert-danger">
+                            <h5 class="alert-heading"><i class="fas fa-times-circle me-2"></i>Application Not Approved</h5>
+                            <p>Unfortunately, we were unable to approve your application at this time.</p>
+                            <p class="mb-0">If you have questions about this decision, please contact our support team for more information.</p>
+                        </div>
+                    {% endif %}
+
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Application Details</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Username:</strong> {{ lister.user.username }}</p>
+                                    <p><strong>Email:</strong> {{ lister.user.email }}</p>
+                                    <p><strong>Phone:</strong> {{ lister.contact_phone }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p>
+                                        <strong>Status:</strong>
+                                        {% if lister.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% elif lister.status == 'approved' %}
+                                            <span class="badge bg-success">Approved</span>
+                                        {% elif lister.status == 'rejected' %}
+                                            <span class="badge bg-danger">Not Approved</span>
+                                        {% endif %}
+                                    </p>
+                                    <p><strong>Business Name:</strong> {{ lister.business_name|default:"Not provided" }}</p>
+                                    {% if lister.approved_at %}
+                                    <p><strong>Approved on:</strong> {{ lister.approved_at|date:"F d, Y" }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-12">
+                                    <p><strong>Address:</strong><br>{{ lister.address }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 text-center">
+                        <a href="{% url 'food_donation:marketplace' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left me-2"></i>Return to Marketplace
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

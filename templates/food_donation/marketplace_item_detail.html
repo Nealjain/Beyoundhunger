@@ -1,0 +1,455 @@
+{% extends 'food_donation/base.html' %}
+{% load static %}
+
+{% block title %}{{ item.title }} - Marketplace{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'food_donation:home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'food_donation:marketplace' %}">Marketplace</a></li>
+            <li class="breadcrumb-item active">{{ item.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                {% if item.image %}
+                <div id="itemImageCarousel" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-inner">
+                        <div class="carousel-item active">
+                            <img src="{{ item.image.url }}" class="d-block w-100" alt="{{ item.title }}" style="max-height: 400px; object-fit: contain;">
+                        </div>
+                        
+                        {% for img in additional_images %}
+                        <div class="carousel-item">
+                            <img src="{{ img.image.url }}" class="d-block w-100" alt="{{ item.title }}" style="max-height: 400px; object-fit: contain;">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if additional_images|length > 0 %}
+                    <button class="carousel-control-prev" type="button" data-bs-target="#itemImageCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#itemImageCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                    
+                    <div class="mt-2 d-flex justify-content-center">
+                        <div class="d-flex gap-1">
+                            <button type="button" data-bs-target="#itemImageCarousel" data-bs-slide-to="0" class="active" aria-current="true" 
+                                    style="width: 50px; height: 50px; padding: 0; border: 2px solid #ccc; overflow: hidden;">
+                                <img src="{{ item.image.url }}" alt="Thumbnail" style="width: 100%; height: 100%; object-fit: cover;">
+                            </button>
+                            
+                            {% for img in additional_images %}
+                            <button type="button" data-bs-target="#itemImageCarousel" data-bs-slide-to="{{ forloop.counter }}" 
+                                    style="width: 50px; height: 50px; padding: 0; border: 2px solid #ccc; overflow: hidden;">
+                                <img src="{{ img.image.url }}" alt="Thumbnail" style="width: 100%; height: 100%; object-fit: cover;">
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="bg-light d-flex align-items-center justify-content-center py-5">
+                    <i class="fas fa-shopping-basket fa-5x text-muted"></i>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h1 class="card-title mb-1">{{ item.title }}</h1>
+                            <p class="text-muted mb-2">Posted by {{ item.seller.username }} on {{ item.created_at|date:"M d, Y" }}</p>
+                        </div>
+                        <div>
+                            {% if item.is_free %}
+                            <span class="badge bg-success fs-5 px-3 py-2">FREE</span>
+                            {% else %}
+                            <span class="badge bg-primary fs-5 px-3 py-2">₹{{ item.price|default:"Price not specified" }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-3 mb-4">
+                        <div class="d-flex">
+                            <div class="me-4">
+                                <small class="text-muted d-block">Category</small>
+                                <span class="fw-bold">{{ item.get_category_display }}</span>
+                            </div>
+                            <div class="me-4">
+                                <small class="text-muted d-block">Status</small>
+                                <span class="fw-bold">{{ item.get_status_display }}</span>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block">Quantity</small>
+                                <span class="fw-bold">{{ item.quantity }}</span>
+                            </div>
+                        </div>
+                        <div>
+                            <small class="text-muted d-block">Location</small>
+                            <span>{{ item.location }}</span>
+                        </div>
+                    </div>
+
+                    {% if item.expiry_date %}
+                    <div class="alert {% if item.is_expired %}alert-danger{% else %}alert-warning{% endif %} mb-3">
+                        <i class="fas fa-clock me-2"></i>
+                        {% if item.is_expired %}
+                        <strong>Expired on:</strong> {{ item.expiry_date|date:"M d, Y" }} (Item may no longer be available)
+                        {% else %}
+                        <strong>Expiry date:</strong> {{ item.expiry_date|date:"M d, Y" }}
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <h5 class="mb-3">Description</h5>
+                    <p class="card-text">{{ item.description|linebreaks }}</p>
+                    
+                    {% if is_owner %}
+                    <div class="border-top pt-3 mt-4">
+                        <h5 class="mb-3">Manage Your Listing</h5>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'food_donation:edit_marketplace_item' item.pk %}" class="btn btn-primary"><i class="fas fa-edit me-2"></i>Edit Listing</a>
+                            <a href="{% url 'food_donation:delete_marketplace_item' item.pk %}" class="btn btn-danger"><i class="fas fa-trash me-2"></i>Delete</a>
+                            
+                            {% if item.status != "expired" %}
+                            <div class="dropdown">
+                                <button class="btn btn-outline-primary dropdown-toggle" type="button" id="statusDropdown" data-bs-toggle="dropdown">
+                                    <i class="fas fa-tag me-2"></i>Update Status
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="statusDropdown">
+                                    {% for status_value, status_name in item.STATUS_CHOICES %}
+                                    <li>
+                                        <form method="post" action="{% url 'food_donation:update_marketplace_status' item.pk %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="status" value="{{ status_value }}">
+                                            <button type="submit" class="dropdown-item {% if item.status == status_value %}active{% endif %}">
+                                                {{ status_name }}
+                                            </button>
+                                        </form>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-phone-alt me-2"></i>Contact Information</h5>
+                </div>
+                <div class="card-body">
+                    {% if user.is_authenticated %}
+                        <p><strong>{{ item.seller.username }}</strong> is offering this item.</p>
+                        
+                        <div class="d-grid gap-2">
+                            <a href="mailto:{{ item.seller.email }}" class="btn btn-outline-primary">
+                                <i class="fas fa-envelope me-2"></i>Contact via Email
+                            </a>
+                            {% if item.status == 'available' and not is_owner %}
+                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#interestModal">
+                                <i class="fas fa-hand-paper me-2"></i>I'm Interested
+                            </button>
+                            {% endif %}
+                        </div>
+                        
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>Please <a href="{% url 'food_donation:login' %}?next={{ request.path }}">login</a> to contact the seller.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if not item.is_free and item.status == 'available' %}
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-gavel me-2"></i>Bidding</h5>
+                </div>
+                <div class="card-body">
+                    {% if is_owner %}
+                        <h6>Bids on Your Item</h6>
+                        {% if bids %}
+                            <div class="list-group mb-3">
+                                {% for bid in bids %}
+                                <div class="list-group-item list-group-item-action">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <strong>${{ bid.amount }}</strong>
+                                            <span class="text-muted">by {{ bid.bidder.username }}</span>
+                                        </div>
+                                        <div>
+                                            {% if bid.is_accepted %}
+                                                <span class="badge bg-success">Accepted</span>
+                                            {% elif bid.is_rejected %}
+                                                <span class="badge bg-danger">Rejected</span>
+                                            {% else %}
+                                                <form method="post" action="{% url 'food_donation:accept_bid' item_pk=item.pk bid_pk=bid.pk %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-sm btn-success">Accept</button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    {% if bid.message %}
+                                    <div class="small text-muted mt-1">{{ bid.message }}</div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>No bids yet.
+                            </div>
+                        {% endif %}
+                        
+                    {% else %}
+                        <!-- Bid stats visible to everyone -->
+                        <div class="mb-3">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="card border-0 bg-light mb-2">
+                                        <div class="card-body text-center py-2">
+                                            <h6 class="mb-0">{{ item.get_bid_count }}</h6>
+                                            <small class="text-muted">Total Bids</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="card border-0 bg-light mb-2">
+                                        <div class="card-body text-center py-2">
+                                            <h6 class="mb-0">{% if item.get_average_bid > 0 %}₹{{ item.get_average_bid|floatformat:2 }}{% else %}N/A{% endif %}</h6>
+                                            <small class="text-muted">Avg. Bid</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if user.is_authenticated and not is_owner %}
+                            {% if item.allow_bidding %}
+                                <h6>Your Bid</h6>
+                                
+                                {% if user_bid %}
+                                    <div class="alert {% if user_bid.is_accepted %}alert-success{% elif user_bid.is_rejected %}alert-danger{% else %}alert-info{% endif %} mb-3">
+                                        {% if user_bid.is_accepted %}
+                                            <span class="badge bg-success">Accepted</span>
+                                            Your bid of ${{ user_bid.amount }} has been accepted! Contact the seller for next steps.
+                                        {% elif user_bid.is_rejected %}
+                                            <span class="badge bg-danger">Rejected</span>
+                                            You can submit a new bid below.
+                                        {% else %}
+                                            <span class="badge bg-info">Pending</span>
+                                            Your bid of ${{ user_bid.amount }} is awaiting response.
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                                
+                                <form method="post" action="{% url 'food_donation:place_bid' item.pk %}">
+                                    {% csrf_token %}
+                                    <div class="mb-3">
+                                        <label for="bid_amount" class="form-label">Your Bid ($)</label>
+                                        <input type="number" class="form-control" id="bid_amount" name="bid_amount" 
+                                               value="{{ user_bid.amount|default:item.price }}" min="{{ item.price }}" step="0.01" required>
+                                        <div class="form-text">
+                                            {% if item.price %}
+                                                Minimum bid: ${{ item.price }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="bid_message" class="form-label">Message (optional)</label>
+                                        <textarea class="form-control" id="bid_message" name="bid_message" rows="2"
+                                                  placeholder="Additional details about your bid or questions for the seller">{{ user_bid.message|default:'' }}</textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-warning w-100">
+                                        {% if user_bid %}
+                                            <i class="fas fa-sync-alt me-2"></i>Update Bid
+                                        {% else %}
+                                            <i class="fas fa-gavel me-2"></i>Place Bid
+                                        {% endif %}
+                                    </button>
+                                </form>
+                                <div class="alert alert-info mt-3 small">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    The seller will be notified of your bid and can choose to accept it.
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    This seller doesn't accept bids for this item. Please use the contact button to express interest.
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Please <a href="{% url 'food_donation:login' %}?next={{ request.path }}">login</a> to place a bid.
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Direct Messaging Section -->
+            {% if user.is_authenticated and not is_owner %}
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-comments me-2"></i>Message Seller</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'food_donation:send_message' item.pk %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="receiver" value="{{ item.seller.id }}">
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Your Message</label>
+                            <textarea class="form-control" id="message" name="message" rows="3" required
+                                      placeholder="Hi, I'm interested in your item. Is it still available?"></textarea>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="include_phone" name="include_phone">
+                            <label class="form-check-label" for="include_phone">Include my phone number</label>
+                        </div>
+                        <button type="submit" class="btn btn-info w-100">
+                            <i class="fas fa-paper-plane me-2"></i>Send Message
+                        </button>
+                    </form>
+                    <div class="mt-3 small text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        The seller will be notified of your message via email and on the platform.
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Safety Tips</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i>Meet in a public place
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i>Check food quality before accepting
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i>Verify expiration dates
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i>Tell someone about your meetup
+                        </li>
+                    </ul>
+                    
+                    {% if user.is_authenticated and not is_owner %}
+                    <div class="mt-3">
+                        <button class="btn btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#reportModal">
+                            <i class="fas fa-flag me-2"></i>Report Listing
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Similar Items</h5>
+                    <p class="card-text text-muted">Check the marketplace for similar items in the same category.</p>
+                    <a href="{% url 'food_donation:marketplace' %}?category={{ item.category }}" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-search me-2"></i>Browse Similar Items
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Interest Modal -->
+<div class="modal fade" id="interestModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Contact Seller</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>You're interested in <strong>{{ item.title }}</strong>.</p>
+                <p>Send a message to the seller using the form below:</p>
+                <form method="post" action="#">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Your Message</label>
+                        <textarea class="form-control" id="message" rows="3" placeholder="Hi, I'm interested in your item. Is it still available? When can we meet?"></textarea>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-paper-plane me-2"></i>Send Message
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+                <div class="alert alert-info mt-3 small">
+                    <i class="fas fa-info-circle me-2"></i>For now, this will send an email to the seller. In the future, we plan to add in-app messaging.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Listing Modal -->
+<div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-flag me-2"></i>Report Listing</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Please let us know why you're reporting this listing:</p>
+                <form method="post" action="{% url 'food_donation:report_marketplace_item' item.pk %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Reason for reporting</label>
+                        <select class="form-select" name="report_reason" required>
+                            <option value="" selected disabled>Select a reason</option>
+                            <option value="inappropriate">Inappropriate content</option>
+                            <option value="offensive">Offensive or harmful content</option>
+                            <option value="expired">Item expired but not marked as such</option>
+                            <option value="scam">Potential scam or fraud</option>
+                            <option value="other">Other reason</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="report_details" class="form-label">Additional details</label>
+                        <textarea class="form-control" id="report_details" name="report_details" rows="3" placeholder="Please provide any additional information about the issue..."></textarea>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-paper-plane me-2"></i>Submit Report
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+                <div class="alert alert-info mt-3 small">
+                    <i class="fas fa-info-circle me-2"></i>Thank you for helping keep our marketplace safe. We review all reports and take appropriate action.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,44 @@
+MARKETPLACE QUERY FIX
+
+The error is in your food_donation/views.py file around line 466-467. The query for marketplace items has improper backslashes and indentation.
+
+BAD CODE (DO NOT USE):
+```python
+items = MarketplaceItem.objects.filter(status='available')\\
+.select_related('seller')\
+```
+
+GOOD CODE (USE THIS):
+```python
+items = MarketplaceItem.objects.filter(status='available').select_related('seller')
+```
+
+OR EVEN BETTER (WITH PROPER LINE BREAKS):
+```python
+items = (
+    MarketplaceItem.objects.filter(status='available')
+    .select_related('seller')
+    .prefetch_related('images')
+    .order_by('-created_at')
+)
+```
+
+To fix this in your views.py file, follow these steps:
+
+1. Open the file in an editor:
+   ```
+   nano food_donation/views.py
+   ```
+
+2. Find the problematic code (around line 466)
+
+3. Replace it with the correct version
+
+4. Save the file (Ctrl+O, Enter, Ctrl+X in nano)
+
+5. Run migrations:
+   ```
+   python manage.py migrate
+   ```
+
+The issue is that Python's line continuation with backslashes must not have any characters (not even spaces) after the backslash. Using parentheses for multi-line expressions is cleaner and less error-prone. 

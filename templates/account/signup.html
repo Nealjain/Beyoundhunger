@@ -1,0 +1,76 @@
+{% extends "account/base.html" %}
+{% load i18n %}
+{% load account socialaccount %}
+{% load static %}
+
+{% block title %}{% trans "Sign Up" %} | Beyond Hunger{% endblock %}
+
+{% block allauth_content %}
+<h1>{% trans "Sign Up" %}</h1>
+
+{% get_providers as socialaccount_providers %}
+
+{% if socialaccount_providers %}
+<div class="social-buttons">
+  <a href="/accounts/google/login/?process=login" class="btn btn-google">
+    <img src="{% static 'images/google-icon.svg' %}" width="24" height="24" alt="Google" class="me-2">
+    {% trans "Continue with Google" %}
+  </a>
+</div>
+
+<div class="or-divider">
+  <span>{% trans 'or' %}</span>
+</div>
+{% endif %}
+
+<form class="signup" method="POST" action="{% url 'account_signup' %}">
+  {% csrf_token %}
+  
+  {% if form.errors %}
+  <div class="alert alert-danger">
+    <ul class="mb-0">
+      {% for field in form %}
+        {% for error in field.errors %}
+          <li>{{ field.label }}: {{ error }}</li>
+        {% endfor %}
+      {% endfor %}
+      {% for error in form.non_field_errors %}
+        <li>{{ error }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+  
+  <div class="form-group">
+    <label for="id_username" class="field-label">{% trans "Username" %}</label>
+    <input type="text" name="username" placeholder="Username" class="form-control" required id="id_username">
+  </div>
+  
+  <div class="form-group">
+    <label for="id_email" class="field-label">{% trans "Email" %}</label>
+    <input type="email" name="email" placeholder="Email" class="form-control" required id="id_email">
+  </div>
+  
+  <div class="form-group">
+    <label for="id_password1" class="field-label">{% trans "Password" %}</label>
+    <input type="password" name="password1" placeholder="Password" class="form-control" required id="id_password1">
+  </div>
+  
+  <div class="form-group">
+    <label for="id_password2" class="field-label">{% trans "Confirm Password" %}</label>
+    <input type="password" name="password2" placeholder="Confirm Password" class="form-control" required id="id_password2">
+  </div>
+  
+  {% if redirect_field_value %}
+  <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+  {% endif %}
+  
+  <button class="btn btn-primary primaryAction" type="submit">{% trans "Sign Up" %}</button>
+</form>
+
+<div class="login-links">
+  <p>
+    {% trans "Already have an account?" %} <a href="{% url 'account_login' %}">{% trans "Sign In" %}</a>
+  </p>
+</div>
+{% endblock %} 

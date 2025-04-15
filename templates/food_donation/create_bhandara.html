@@ -1,0 +1,314 @@
+{% extends "food_donation/base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-md-12">
+            <div class="card shadow-lg rounded-lg animate-on-scroll">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="m-0 text-center"><i class="fas fa-hands-helping me-2"></i>Host a Bhandara Event</h3>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="alert alert-info">
+                                <h5><i class="fas fa-info-circle me-2"></i>What is a Bhandara?</h5>
+                                <p>Bhandara is a community food distribution event where free meals are provided to anyone in need. By hosting a Bhandara, you're directly helping combat hunger in your community.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="alert alert-success">
+                                <h5><i class="fas fa-check-circle me-2"></i>Benefits</h5>
+                                <ul class="mb-0">
+                                    <li>Help those in need</li>
+                                    <li>Build community connections</li>
+                                    <li>Reduce food waste</li>
+                                    <li>Your event will be visible on our map</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data" id="bhandaraForm" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-12 mb-4">
+                                <h4 class="border-bottom pb-2"><i class="fas fa-user me-2"></i>Organizer Information</h4>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                {{ form.organizer_name|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.organizer_phone|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.organizer_email|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.organizer_type|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-12 mb-4">
+                                <h4 class="border-bottom pb-2"><i class="fas fa-info-circle me-2"></i>Event Details</h4>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                {{ form.name|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.expected_attendees|as_crispy_field }}
+                            </div>
+                            <div class="col-12 mb-3">
+                                {{ form.description|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.start_datetime|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.end_datetime|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.image|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.food_items|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-12 mb-4">
+                                <h4 class="border-bottom pb-2"><i class="fas fa-map-marker-alt me-2"></i>Location</h4>
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                {{ form.address|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.city|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.state|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.pincode|as_crispy_field }}
+                            </div>
+                            <div class="col-12 mb-4">
+                                <div id="map" style="height: 300px;" class="border rounded"></div>
+                                <div class="form-text text-muted mt-2">Drag the marker to pinpoint your exact location</div>
+                                {{ form.latitude|as_crispy_field }}
+                                {{ form.longitude|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-12 mb-4">
+                                <h4 class="border-bottom pb-2"><i class="fas fa-shield-alt me-2"></i>Additional Information</h4>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                {{ form.is_recurring|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3 recurring-options">
+                                {{ form.recurring_frequency|as_crispy_field }}
+                            </div>
+                            <div class="col-12 mb-3">
+                                {{ form.special_instructions|as_crispy_field }}
+                            </div>
+                            <div class="col-12 mb-3">
+                                {{ form.volunteers_needed|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3 volunteers-options">
+                                {{ form.volunteers_count|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3 volunteers-options">
+                                {{ form.volunteer_tasks|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="termsCheck" required>
+                                    <label class="form-check-label" for="termsCheck">
+                                        I agree to the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms and Conditions</a> for hosting a Bhandara event.
+                                    </label>
+                                    <div class="invalid-feedback">
+                                        You must agree to the terms and conditions.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'food_donation:bhandara_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-2"></i>Submit Bhandara Event
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Terms and Conditions Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="termsModalLabel">Bhandara Event Terms & Conditions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>1. Event Guidelines</h6>
+                <p>All Bhandara events must comply with local health and safety regulations. Organizers are responsible for obtaining any necessary permits.</p>
+                
+                <h6>2. Food Safety</h6>
+                <p>All food must be prepared in hygienic conditions and served at appropriate temperatures. Organizers should take precautions to prevent foodborne illness.</p>
+                
+                <h6>3. Inclusivity</h6>
+                <p>Bhandara events must be open to all individuals regardless of religion, caste, gender, or socioeconomic status.</p>
+                
+                <h6>4. Cancellations</h6>
+                <p>If an event needs to be cancelled or rescheduled, organizers must update the listing as soon as possible.</p>
+                
+                <h6>5. Responsibility</h6>
+                <p>Beyond Hunger is not responsible for any incidents that may occur during Bhandara events. Organizers assume full responsibility for their events.</p>
+                
+                <h6>6. Data Usage</h6>
+                <p>Event details, including location, will be publicly visible on our platform. Personal contact information will not be publicly displayed.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">I Understand</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+    // Initialize map
+    function initMap() {
+        const defaultLocation = { lat: 20.5937, lng: 78.9629 }; // Default to center of India
+        let markerPosition = defaultLocation;
+        
+        // Get latitude and longitude fields
+        const latField = document.getElementById('{{ form.latitude.id_for_label }}');
+        const lngField = document.getElementById('{{ form.longitude.id_for_label }}');
+        
+        // Check if latitude and longitude already have values
+        if (latField.value && lngField.value) {
+            markerPosition = {
+                lat: parseFloat(latField.value),
+                lng: parseFloat(lngField.value)
+            };
+        }
+        
+        // Create map
+        const map = new google.maps.Map(document.getElementById("map"), {
+            center: markerPosition,
+            zoom: 12,
+            mapTypeControl: true,
+        });
+        
+        // Create marker
+        const marker = new google.maps.Marker({
+            position: markerPosition,
+            map: map,
+            draggable: true,
+            animation: google.maps.Animation.DROP,
+        });
+        
+        // Update fields when marker is dragged
+        marker.addListener("dragend", () => {
+            const position = marker.getPosition();
+            latField.value = position.lat();
+            lngField.value = position.lng();
+        });
+        
+        // Add geocoder for address lookup
+        const geocoder = new google.maps.Geocoder();
+        const addressField = document.getElementById('{{ form.address.id_for_label }}');
+        const cityField = document.getElementById('{{ form.city.id_for_label }}');
+        const stateField = document.getElementById('{{ form.state.id_for_label }}');
+        const pincodeField = document.getElementById('{{ form.pincode.id_for_label }}');
+        
+        // Function to geocode address
+        function geocodeAddress() {
+            const address = addressField.value + ', ' + cityField.value + ', ' + stateField.value + ' ' + pincodeField.value;
+            
+            if (address.trim() === '') return;
+            
+            geocoder.geocode({ 'address': address }, function(results, status) {
+                if (status === 'OK') {
+                    map.setCenter(results[0].geometry.location);
+                    marker.setPosition(results[0].geometry.location);
+                    
+                    // Update latitude and longitude fields
+                    latField.value = results[0].geometry.location.lat();
+                    lngField.value = results[0].geometry.location.lng();
+                }
+            });
+        }
+        
+        // Add event listeners for address fields
+        [addressField, cityField, stateField, pincodeField].forEach(field => {
+            field.addEventListener('blur', geocodeAddress);
+        });
+    }
+    
+    // Form validation
+    document.addEventListener('DOMContentLoaded', function() {
+        // Form validation
+        const form = document.getElementById('bhandaraForm');
+        
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            form.classList.add('was-validated');
+        });
+        
+        // Toggle recurring options visibility
+        const isRecurringCheck = document.getElementById('{{ form.is_recurring.id_for_label }}');
+        const recurringOptions = document.querySelector('.recurring-options');
+        
+        function toggleRecurringOptions() {
+            if (isRecurringCheck.checked) {
+                recurringOptions.style.display = 'block';
+            } else {
+                recurringOptions.style.display = 'none';
+            }
+        }
+        
+        isRecurringCheck.addEventListener('change', toggleRecurringOptions);
+        toggleRecurringOptions(); // Initial state
+        
+        // Toggle volunteers options visibility
+        const volunteersNeededCheck = document.getElementById('{{ form.volunteers_needed.id_for_label }}');
+        const volunteersOptions = document.querySelectorAll('.volunteers-options');
+        
+        function toggleVolunteersOptions() {
+            volunteersOptions.forEach(element => {
+                element.style.display = volunteersNeededCheck.checked ? 'block' : 'none';
+            });
+        }
+        
+        volunteersNeededCheck.addEventListener('change', toggleVolunteersOptions);
+        toggleVolunteersOptions(); // Initial state
+    });
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initMap" async defer></script>
+{% endblock %}
+{% endblock %} 

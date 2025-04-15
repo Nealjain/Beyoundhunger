@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title|default:"Beyond Hunger - Debug" }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            color: #4a6741;
+            border-bottom: 2px solid #4a6741;
+            padding-bottom: 10px;
+        }
+        .info-box {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+        .nav-links {
+            margin: 20px 0;
+        }
+        .nav-links a {
+            display: inline-block;
+            padding: 8px 16px;
+            background-color: #4a6741;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        .nav-links a:hover {
+            background-color: #3a5331;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Beyond Hunger - Debug Mode</h1>
+        
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/about/">About</a>
+            <a href="/contact/">Contact</a>
+            <a href="/debug-info/">System Info</a>
+        </div>
+        
+        <div class="info-box">
+            <h2>Server Information</h2>
+            <p><strong>Debug Mode:</strong> {% if debug %}<span class="success">Enabled</span>{% else %}<span class="error">Disabled</span>{% endif %}</p>
+            <p><strong>User Count:</strong> {{ user_count }}</p>
+            <p><strong>Allowed Hosts:</strong> {{ allowed_hosts|join:", " }}</p>
+            <p><strong>Static URL:</strong> {{ static_url }}</p>
+            <p><strong>Login URL:</strong> {{ login_url }}</p>
+        </div>
+        
+        <div class="info-box">
+            <h2>Authentication</h2>
+            {% if user.is_authenticated %}
+                <p class="success">You are logged in as: {{ user.username }}</p>
+                <p>Email: {{ user.email }}</p>
+                <p>Staff: {% if user.is_staff %}Yes{% else %}No{% endif %}</p>
+                <p>Superuser: {% if user.is_superuser %}Yes{% else %}No{% endif %}</p>
+            {% else %}
+                <p class="error">You are not logged in.</p>
+                <p>You can <a href="{{ login_url }}">log in here</a>.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html> 

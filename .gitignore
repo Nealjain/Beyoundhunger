@@ -1,0 +1,126 @@
+# Python bytecode files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.venv
+venv/
+ENV/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media
+.env
+
+# WSGI files with sensitive info
+simple_wsgi.py
+wsgi_python313.py
+wsgi_for_pythonanywhere.py
+pythonanywhere_wsgi.py
+login_fix_wsgi.py
+pythonanywhere_tarpit_fix.py
+
+# Editor specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Coverage and test reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Documentation
+docs/_build/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environments
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Elastic Beanstalk
+.elasticbeanstalk/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Django stuff
+staticfiles/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Node.js (for the Next.js frontend)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.next/
+out/
+
+# Local development settings
+*.local
+
+# Environment variables
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local 

@@ -1,0 +1,864 @@
+{% extends 'food_donation/base.html' %}
+{% load food_donation_filters %}
+
+{% block title %}Admin Dashboard - Beyond Hunger{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h2 class="mb-0"><i class="fas fa-cogs me-2"></i>Admin Dashboard</h2>
+                <span class="badge bg-light text-primary">Superuser: {{ user.username }}</span>
+            </div>
+            <div class="card-body">
+                <!-- Statistics Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <h5><i class="fas fa-users me-2"></i>Total Users</h5>
+                                <h3>{{ stats.total_users }}</h3>
+                                <div class="small mt-2">
+                                    {{ stats.total_donors }} Donors / {{ stats.total_volunteers }} Volunteers
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body text-center">
+                                <h5><i class="fas fa-hand-holding-heart me-2"></i>Donations</h5>
+                                <h3>{{ stats.total_donations }}</h3>
+                                <div class="small mt-2">
+                                    {{ stats.pending_donations }} Pending / {{ stats.completed_donations }} Completed
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body text-center">
+                                <h5><i class="fas fa-truck me-2"></i>Active Deliveries</h5>
+                                <h3>{{ stats.active_assignments }}</h3>
+                                <div class="small mt-2">
+                                    Assignments in progress
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body text-center">
+                                <h5><i class="fas fa-ban me-2"></i>Cancelled</h5>
+                                <h3>{{ stats.cancelled_donations }}</h3>
+                                <div class="small mt-2">
+                                    Cancelled donations
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Admin Actions -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="btn-group w-100">
+                            <a href="{% url 'food_donation:admin_marketplace_listers' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-store me-2"></i>Manage Marketplace Listers
+                            </a>
+                            <a href="{% url 'food_donation:admin_contact_messages' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-envelope me-2"></i>View Contact Messages
+                            </a>
+                            <a href="{% url 'food_donation:admin_send_notification' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-bell me-2"></i>Send User Notifications
+                            </a>
+                            <a href="{% url 'admin:index' %}" class="btn btn-outline-primary" target="_blank">
+                                <i class="fas fa-cog me-2"></i>Django Admin
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tabs for different data sections -->
+                <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="donations-tab" data-bs-toggle="tab" data-bs-target="#donations" type="button" role="tab">
+                            <i class="fas fa-hand-holding-heart me-2"></i>Food Donations
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="money-donations-tab" data-bs-toggle="tab" data-bs-target="#money-donations" type="button" role="tab">
+                            <i class="fas fa-dollar-sign me-2"></i>Money Donations
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="assignments-tab" data-bs-toggle="tab" data-bs-target="#assignments" type="button" role="tab">
+                            <i class="fas fa-truck me-2"></i>Delivery Assignments
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="marketplace-listers-tab" data-bs-toggle="tab" data-bs-target="#marketplace-listers" type="button" role="tab">
+                            <i class="fas fa-store me-2"></i>Pending Listers <span class="badge bg-warning rounded-pill">{{ marketplace_listers|length }}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab">
+                            <i class="fas fa-users me-2"></i>Users
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="volunteers-tab" data-bs-toggle="tab" data-bs-target="#volunteers" type="button" role="tab">
+                            <i class="fas fa-user-friends me-2"></i>Volunteers
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="messages-tab" data-bs-toggle="tab" data-bs-target="#messages" type="button" role="tab">
+                            <i class="fas fa-comments me-2"></i>User Messages
+                        </button>
+                    </li>
+                </ul>
+                
+                <!-- Tab Content -->
+                <div class="tab-content" id="adminTabsContent">
+                    <!-- Donations Tab -->
+                    <div class="tab-pane fade show active" id="donations" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h3>Food Donations</h3>
+                            <a href="{% url 'food_donation:download_delivered_donations_csv' %}" class="btn btn-success">
+                                <i class="fas fa-file-csv me-2"></i>Download Delivered Donations (CSV)
+                            </a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-striped admin-table">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Donor</th>
+                                        <th>Food Type</th>
+                                        <th>Quantity</th>
+                                        <th>Pickup Date</th>
+                                        <th>Status</th>
+                                        <th>Payment Status</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for donation in donations %}
+                                    <tr class="{% if donation.status == 'pending' %}table-warning{% elif donation.status == 'delivered' %}table-success{% elif donation.status == 'cancelled' %}table-danger{% endif %}">
+                                        <td>{{ donation.id }}</td>
+                                        <td>{{ donation.donor.username }}</td>
+                                        <td>{{ donation.food_type }}</td>
+                                        <td>{{ donation.quantity }}</td>
+                                        <td>{{ donation.pickup_date|date:"M d, Y" }}</td>
+                                        <td>
+                                            <span class="badge {% if donation.status == 'pending' %}bg-warning{% elif donation.status == 'accepted' %}bg-info{% elif donation.status == 'in_transit' %}bg-primary{% elif donation.status == 'delivered' %}bg-success{% else %}bg-danger{% endif %}">
+                                                {{ donation.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if donation.payment_method %}
+                                                <span class="badge {% if donation.payment_status == 'completed' %}bg-success{% elif donation.payment_status == 'pending' %}bg-warning{% else %}bg-danger{% endif %}">
+                                                    {{ donation.get_payment_status_display }}
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">None</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ donation.created_at|date:"M d, Y H:i" }}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#donationModal{{ donation.id }}">
+                                                <i class="fas fa-edit"></i> Update
+                                            </button>
+                                            
+                                            <!-- Modal for Status Update -->
+                                            <div class="modal fade" id="donationModal{{ donation.id }}" tabindex="-1" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header bg-primary text-white">
+                                                            <h5 class="modal-title">Update Donation Status</h5>
+                                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <form action="{% url 'food_donation:update_donation_status' donation.id %}" method="post">
+                                                            {% csrf_token %}
+                                                            <div class="modal-body">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Current Status:</label>
+                                                                    <span class="badge {% if donation.status == 'pending' %}bg-warning{% elif donation.status == 'accepted' %}bg-info{% elif donation.status == 'in_transit' %}bg-primary{% elif donation.status == 'delivered' %}bg-success{% else %}bg-danger{% endif %}">
+                                                                        {{ donation.get_status_display }}
+                                                                    </span>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label for="status{{ donation.id }}" class="form-label">New Status:</label>
+                                                                    <select id="status{{ donation.id }}" name="status" class="form-select">
+                                                                        {% for status_value, status_name in donation_status_choices %}
+                                                                            <option value="{{ status_value }}" {% if donation.status == status_value %}selected{% endif %}>{{ status_name }}</option>
+                                                                        {% endfor %}
+                                                                    </select>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <p><strong>Donation Details:</strong></p>
+                                                                    <ul class="list-group">
+                                                                        <li class="list-group-item"><strong>Food Type:</strong> {{ donation.food_type }}</li>
+                                                                        <li class="list-group-item"><strong>Quantity:</strong> {{ donation.quantity }}</li>
+                                                                        <li class="list-group-item"><strong>Pickup Address:</strong> {{ donation.pickup_address }}</li>
+                                                                        <li class="list-group-item"><strong>Notes:</strong> {{ donation.notes|default:"None" }}</li>
+                                                                    </ul>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                <button type="submit" class="btn btn-primary">Update Status</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {% if donation.status == 'delivered' %}
+                                                <a href="{% url 'food_donation:download_donation_receipt' donation.id %}" class="btn btn-sm btn-success ms-1" target="_blank">
+                                                    <i class="fas fa-file-pdf"></i> Receipt
+                                                </a>
+                                            {% endif %}
+                                            
+                                            <!-- Delete Button -->
+                                            <button class="btn btn-sm btn-danger ms-1" data-bs-toggle="modal" data-bs-target="#deleteDonationModal{{ donation.id }}">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </button>
+                                            
+                                            <!-- Modal for Delete Confirmation -->
+                                            <div class="modal fade" id="deleteDonationModal{{ donation.id }}" tabindex="-1" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header bg-danger text-white">
+                                                            <h5 class="modal-title">Delete Food Donation</h5>
+                                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <form action="{% url 'food_donation:delete_food_donation' donation.id %}" method="post">
+                                                            {% csrf_token %}
+                                                            <div class="modal-body">
+                                                                <p class="mb-3">Are you sure you want to delete this food donation?</p>
+                                                                <div class="alert alert-warning">
+                                                                    <i class="fas fa-exclamation-triangle me-2"></i> This action cannot be undone.
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label for="delete_reason{{ donation.id }}" class="form-label">Reason for deletion:</label>
+                                                                    <textarea id="delete_reason{{ donation.id }}" name="delete_reason" class="form-control" rows="3" required></textarea>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <div class="form-check">
+                                                                        <input class="form-check-input" type="checkbox" name="notify_donor" id="notify_donor{{ donation.id }}" checked>
+                                                                        <label class="form-check-label" for="notify_donor{{ donation.id }}">
+                                                                            Notify donor by email
+                                                                        </label>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                <button type="submit" class="btn btn-danger">Delete Donation</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="9" class="text-center py-4">No donations found.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Money Donations Tab -->
+                    <div class="tab-pane fade" id="money-donations" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h3>Money Donations</h3>
+                            <a href="{% url 'admin:food_donation_moneydonation_add' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Add New Donation
+                            </a>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-striped admin-table">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Donor</th>
+                                        <th>Amount</th>
+                                        <th>Payment Method</th>
+                                        <th>Transaction ID</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for donation in money_donations %}
+                                    <tr class="{% if donation.status == 'pending' %}table-warning{% elif donation.status == 'approved' %}table-success{% elif donation.status == 'cancelled' %}table-danger{% elif donation.status == 'rejected' %}table-secondary{% endif %}">
+                                        <td>{{ donation.id }}</td>
+                                        <td>
+                                            <strong>{{ donation.donor.username }}</strong><br>
+                                            <small>{{ donation.donor.email }}</small>
+                                        </td>
+                                        <td>₹{{ donation.amount }}</td>
+                                        <td>{{ donation.payment_method|default:"Manual" }}</td>
+                                        <td>{{ donation.transaction_id|default:"N/A" }}</td>
+                                        <td>
+                                            <span class="badge {% if donation.status == 'pending' %}bg-warning{% elif donation.status == 'approved' %}bg-success{% elif donation.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                                {{ donation.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>{{ donation.created_at|date:"M d, Y H:i" }}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#moneyDonationModal{{ donation.id }}">
+                                                <i class="fas fa-edit"></i> Update
+                                            </button>
+                                            
+                                            {% if donation.can_cancel %}
+                                            <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#cancelModal{{ donation.id }}">
+                                                <i class="fas fa-times"></i> Cancel
+                                            </button>
+                                            {% endif %}
+                                            
+                                            {% if donation.status == 'approved' %}
+                                            <a href="{% url 'admin:money_donation_receipt' donation.id %}" class="btn btn-sm btn-success ms-1" target="_blank">
+                                                <i class="fas fa-file-pdf"></i> Receipt
+                                            </a>
+                                            {% endif %}
+                                            
+                                            <!-- Delete Button -->
+                                            <button class="btn btn-sm btn-danger ms-1" data-bs-toggle="modal" data-bs-target="#deleteMoneyDonationModal{{ donation.id }}">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </button>
+                                            
+                                            <!-- Modal for Delete Confirmation -->
+                                            <div class="modal fade" id="deleteMoneyDonationModal{{ donation.id }}" tabindex="-1" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header bg-danger text-white">
+                                                            <h5 class="modal-title">Delete Money Donation</h5>
+                                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <form action="{% url 'food_donation:delete_money_donation' donation.id %}" method="post">
+                                                            {% csrf_token %}
+                                                            <div class="modal-body">
+                                                                <p class="mb-3">Are you sure you want to delete this money donation?</p>
+                                                                <div class="alert alert-warning">
+                                                                    <i class="fas fa-exclamation-triangle me-2"></i> This action cannot be undone.
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label for="delete_money_reason{{ donation.id }}" class="form-label">Reason for deletion:</label>
+                                                                    <textarea id="delete_money_reason{{ donation.id }}" name="delete_reason" class="form-control" rows="3" required></textarea>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <div class="form-check">
+                                                                        <input class="form-check-input" type="checkbox" name="notify_donor" id="notify_money_donor{{ donation.id }}" checked>
+                                                                        <label class="form-check-label" for="notify_money_donor{{ donation.id }}">
+                                                                            Notify donor by email
+                                                                        </label>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                <button type="submit" class="btn btn-danger">Delete Donation</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Modal for Status Update -->
+                                            <div class="modal fade" id="moneyDonationModal{{ donation.id }}" tabindex="-1" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header bg-primary text-white">
+                                                            <h5 class="modal-title">Update Money Donation Status</h5>
+                                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <form action="{% url 'food_donation:update_money_donation_status' donation.id %}" method="post">
+                                                            {% csrf_token %}
+                                                            <div class="modal-body">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Current Status:</label>
+                                                                    <span class="badge {% if donation.status == 'pending' %}bg-warning{% elif donation.status == 'approved' %}bg-success{% elif donation.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                                                        {{ donation.get_status_display }}
+                                                                    </span>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label for="status{{ donation.id }}" class="form-label">New Status:</label>
+                                                                    <select id="status{{ donation.id }}" name="status" class="form-select">
+                                                                        <option value="pending" {% if donation.status == 'pending' %}selected{% endif %}>Pending</option>
+                                                                        <option value="approved" {% if donation.status == 'approved' %}selected{% endif %}>Approved</option>
+                                                                        <option value="rejected" {% if donation.status == 'rejected' %}selected{% endif %}>Rejected</option>
+                                                                        <option value="cancelled" {% if donation.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                                                    </select>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <p><strong>Donation Details:</strong></p>
+                                                                    <ul class="list-group">
+                                                                        <li class="list-group-item"><strong>Amount:</strong> ₹{{ donation.amount }}</li>
+                                                                        <li class="list-group-item"><strong>Donor:</strong> {{ donation.donor.username }}</li>
+                                                                        <li class="list-group-item"><strong>Email:</strong> {{ donation.donor.email }}</li>
+                                                                        <li class="list-group-item"><strong>Notes:</strong> {{ donation.notes|default:"None" }}</li>
+                                                                    </ul>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                                <button type="submit" class="btn btn-primary">Update Status</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Modal for Cancel Confirmation -->
+                                            <div class="modal fade" id="cancelModal{{ donation.id }}" tabindex="-1" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header bg-danger text-white">
+                                                            <h5 class="modal-title">Cancel Donation</h5>
+                                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <form action="{% url 'food_donation:cancel_money_donation' donation.id %}" method="post">
+                                                            {% csrf_token %}
+                                                            <div class="modal-body">
+                                                                <p class="mb-3">Are you sure you want to cancel this donation?</p>
+                                                                <div class="alert alert-warning">
+                                                                    <i class="fas fa-exclamation-triangle me-2"></i> This action cannot be undone.
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label for="cancel_reason{{ donation.id }}" class="form-label">Reason for cancellation:</label>
+                                                                    <textarea id="cancel_reason{{ donation.id }}" name="cancel_reason" class="form-control" rows="3" required></textarea>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                                <button type="submit" class="btn btn-danger">Confirm Cancellation</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="8" class="text-center py-4">No money donations found.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Delivery Assignments Tab -->
+                    <div class="tab-pane fade" id="assignments" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-striped admin-table">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Donation</th>
+                                        <th>Volunteer</th>
+                                        <th>Status</th>
+                                        <th>Pickup Time</th>
+                                        <th>Delivery Time</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for assignment in assignments %}
+                                    <tr class="{% if assignment.status == 'assigned' %}table-warning{% elif assignment.status == 'picked_up' %}table-info{% elif assignment.status == 'delivered' %}table-success{% elif assignment.status == 'cancelled' %}table-danger{% endif %}">
+                                        <td>{{ assignment.id }}</td>
+                                        <td>{{ assignment.donation.food_type }} (ID: {{ assignment.donation.id }})</td>
+                                        <td>{{ assignment.volunteer.user.username }}</td>
+                                        <td>
+                                            <span class="badge {% if assignment.status == 'assigned' %}bg-warning{% elif assignment.status == 'picked_up' %}bg-info{% elif assignment.status == 'delivered' %}bg-success{% else %}bg-danger{% endif %}">
+                                                {{ assignment.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>{{ assignment.pickup_time|date:"M d, Y H:i" }}</td>
+                                        <td>{% if assignment.delivery_time %}{{ assignment.delivery_time|date:"M d, Y H:i" }}{% else %}Not delivered yet{% endif %}</td>
+                                        <td>{{ assignment.created_at|date:"M d, Y H:i" }}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#assignmentModal{{ assignment.id }}">
+                                                <i class="fas fa-edit"></i> Update
+                                            </button>
+                                            
+                                            <!-- Modal for Status Update -->
+                                            <div class="modal fade" id="assignmentModal{{ assignment.id }}" tabindex="-1" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header bg-primary text-white">
+                                                            <h5 class="modal-title">Update Assignment Status</h5>
+                                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <form action="{% url 'food_donation:update_assignment_status' assignment.id %}" method="post">
+                                                            {% csrf_token %}
+                                                            <div class="modal-body">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Current Status:</label>
+                                                                    <span class="badge {% if assignment.status == 'assigned' %}bg-warning{% elif assignment.status == 'picked_up' %}bg-info{% elif assignment.status == 'delivered' %}bg-success{% else %}bg-danger{% endif %}">
+                                                                        {{ assignment.get_status_display }}
+                                                                    </span>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label for="status{{ assignment.id }}" class="form-label">New Status:</label>
+                                                                    <select id="status{{ assignment.id }}" name="status" class="form-select">
+                                                                        {% for status_value, status_name in assignment_status_choices %}
+                                                                            <option value="{{ status_value }}" {% if assignment.status == status_value %}selected{% endif %}>{{ status_name }}</option>
+                                                                        {% endfor %}
+                                                                    </select>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <p><strong>Assignment Details:</strong></p>
+                                                                    <ul class="list-group">
+                                                                        <li class="list-group-item"><strong>Food Type:</strong> {{ assignment.donation.food_type }}</li>
+                                                                        <li class="list-group-item"><strong>Pickup Address:</strong> {{ assignment.donation.pickup_address }}</li>
+                                                                        <li class="list-group-item"><strong>Volunteer:</strong> {{ assignment.volunteer.user.username }}</li>
+                                                                        <li class="list-group-item"><strong>Notes:</strong> {{ assignment.notes|default:"None" }}</li>
+                                                                    </ul>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                <button type="submit" class="btn btn-primary">Update Status</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="8" class="text-center py-4">No delivery assignments found.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Marketplace Listers Tab -->
+                    <div class="tab-pane fade" id="marketplace-listers" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h3>Pending Marketplace Applications</h3>
+                            <a href="{% url 'food_donation:admin_marketplace_listers' %}" class="btn btn-primary">
+                                <i class="fas fa-external-link-alt me-1"></i> Full Management Page
+                            </a>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-striped admin-table">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Business Name</th>
+                                        <th>Applied On</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for lister in marketplace_listers %}
+                                    <tr class="{% if lister.status == 'pending' %}table-warning{% elif lister.status == 'approved' %}table-success{% elif lister.status == 'rejected' %}table-danger{% endif %}">
+                                        <td>
+                                            <strong>{{ lister.user.username }}</strong><br>
+                                            <small>{{ lister.user.email }}</small>
+                                        </td>
+                                        <td>{{ lister.business_name|default:"Individual" }}</td>
+                                        <td>{{ lister.created_at|date:"M d, Y" }}</td>
+                                        <td>
+                                            {% if lister.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                            {% elif lister.status == 'approved' %}
+                                            <span class="badge bg-success">Approved</span>
+                                            {% elif lister.status == 'rejected' %}
+                                            <span class="badge bg-danger">Rejected</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <form method="post" action="{% url 'food_donation:update_marketplace_lister_status' lister.id %}" class="me-1">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="status" value="approved">
+                                                    <button type="submit" class="btn btn-sm btn-success">
+                                                        <i class="fas fa-check"></i> Approve
+                                                    </button>
+                                                </form>
+                                                <form method="post" action="{% url 'food_donation:update_marketplace_lister_status' lister.id %}">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="status" value="rejected">
+                                                    <button type="submit" class="btn btn-sm btn-danger">
+                                                        <i class="fas fa-times"></i> Reject
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4">No lister applications found.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Users Tab -->
+                    <div class="tab-pane fade" id="users" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-striped admin-table">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Username</th>
+                                        <th>Email</th>
+                                        <th>Name</th>
+                                        <th>Phone</th>
+                                        <th>Address</th>
+                                        <th>Roles</th>
+                                        <th>Joined</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user_profile in user_profiles %}
+                                    <tr>
+                                        <td>{{ user_profile.user.id }}</td>
+                                        <td>{{ user_profile.user.username }}</td>
+                                        <td>{{ user_profile.user.email }}</td>
+                                        <td>{{ user_profile.user.first_name }} {{ user_profile.user.last_name }}</td>
+                                        <td>{{ user_profile.phone }}</td>
+                                        <td>{{ user_profile.address }}</td>
+                                        <td>
+                                            {% if user_profile.user.is_superuser %}
+                                                <span class="badge bg-danger">Admin</span>
+                                            {% endif %}
+                                            {% if user_profile.is_donor %}
+                                                <span class="badge bg-primary">Donor</span>
+                                            {% endif %}
+                                            {% if user_profile.is_volunteer %}
+                                                <span class="badge bg-success">Volunteer</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ user_profile.user.date_joined|date:"M d, Y" }}</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="8" class="text-center py-4">No users found.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Volunteers Tab -->
+                    <div class="tab-pane fade" id="volunteers" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-striped admin-table">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Volunteer</th>
+                                        <th>Phone</th>
+                                        <th>Availability</th>
+                                        <th>Vehicle Type</th>
+                                        <th>Service Area</th>
+                                        <th>Active Assignments</th>
+                                        <th>Joined</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for volunteer in volunteers %}
+                                    <tr>
+                                        <td>{{ volunteer.id }}</td>
+                                        <td>{{ volunteer.user.username }}</td>
+                                        <td>{{ volunteer.user.userprofile.phone }}</td>
+                                        <td>
+                                            {% if volunteer.availability %}
+                                                <span class="badge bg-success">Available</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Not Available</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ volunteer.vehicle_type|default:"Not specified" }}</td>
+                                        <td>{{ volunteer.service_area }}</td>
+                                        <td>
+                                            {% with active_count=assignments|filter_active_assignments:volunteer.id %}
+                                                {% if active_count > 0 %}
+                                                    <span class="badge bg-primary">{{ active_count }} active</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">None</span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </td>
+                                        <td>{{ volunteer.created_at|date:"M d, Y" }}</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="8" class="text-center py-4">No volunteers found.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- User Messages Tab -->
+                    <div class="tab-pane fade" id="messages" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h3>User Messaging</h3>
+                            <a href="{% url 'food_donation:admin_send_notification' %}" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-1"></i> New Message to Users
+                            </a>
+                        </div>
+                        
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="fas fa-comments me-2"></i>Recent User Conversations</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>User</th>
+                                                <th>Email</th>
+                                                <th>Last Message</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for profile in user_profiles|slice:":10" %}
+                                            <tr>
+                                                <td>{{ profile.user.username }}</td>
+                                                <td>{{ profile.user.email }}</td>
+                                                <td>
+                                                    {% comment %}
+                                                    This would ideally display the most recent message timestamp
+                                                    {% endcomment %}
+                                                    -
+                                                </td>
+                                                <td>
+                                                    <a href="#" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#messageModal{{ profile.user.id }}">
+                                                        <i class="fas fa-comment"></i> Message
+                                                    </a>
+                                                    
+                                                    <!-- Modal for sending message -->
+                                                    <div class="modal fade" id="messageModal{{ profile.user.id }}" tabindex="-1" aria-hidden="true">
+                                                        <div class="modal-dialog">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header bg-primary text-white">
+                                                                    <h5 class="modal-title">Send Message to {{ profile.user.username }}</h5>
+                                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                </div>
+                                                                <form action="{% url 'food_donation:admin_send_notification' %}" method="post">
+                                                                    {% csrf_token %}
+                                                                    <div class="modal-body">
+                                                                        <input type="hidden" name="recipient_type" value="specific">
+                                                                        <input type="hidden" name="specific_user" value="{{ profile.user.id }}">
+                                                                        <div class="mb-3">
+                                                                            <label for="title{{ profile.user.id }}" class="form-label">Subject</label>
+                                                                            <input type="text" class="form-control" id="title{{ profile.user.id }}" name="title" required>
+                                                                        </div>
+                                                                        <div class="mb-3">
+                                                                            <label for="message{{ profile.user.id }}" class="form-label">Message</label>
+                                                                            <textarea class="form-control" id="message{{ profile.user.id }}" name="message" rows="4" required></textarea>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="modal-footer">
+                                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                        <button type="submit" class="btn btn-primary">Send Message</button>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr>
+                                                <td colspan="4" class="text-center py-4">No users found.</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0"><i class="fas fa-bell me-2"></i>Recent Notifications Sent</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-center">
+                                    <a href="{% url 'food_donation:admin_send_notification' %}" class="btn btn-primary">
+                                        <i class="fas fa-paper-plane me-1"></i> Send New Notification
+                                    </a>
+                                </p>
+                                <p class="text-center text-muted">
+                                    Use the notification system to send broadcasts to all users or specific groups.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Remove hover effects completely */
+    .admin-table tr:hover {
+        background-color: inherit !important;
+    }
+    
+    .table-striped > tbody > tr:nth-of-type(odd) {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+    
+    .table-striped > tbody > tr:nth-of-type(even) {
+        background-color: rgba(0, 0, 0, 0.0);
+    }
+    
+    /* Remove all other hover animations */
+    * {
+        transition: none !important;
+    }
+    
+    *:hover {
+        transform: none !important;
+        box-shadow: none !important;
+    }
+    
+    .card-body, .nav-link, .btn, .badge, .list-group-item, .modal-content {
+        transition: none !important;
+    }
+    
+    .card-body:hover, .nav-link:hover, .btn:hover, .badge:hover, .list-group-item:hover {
+        transform: none !important;
+        box-shadow: none !important;
+    }
+    
+    /* Remove animation classes */
+    .animate__animated {
+        animation-duration: 0s !important;
+        animation-name: none !important;
+    }
+</style>
+
+{% endblock %} 

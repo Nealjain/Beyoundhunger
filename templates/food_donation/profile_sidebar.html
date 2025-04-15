@@ -1,0 +1,70 @@
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-user me-2"></i>User Dashboard</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+            <a href="{% url 'food_donation:profile' %}" class="list-group-item list-group-item-action {% if active == 'profile' %}active{% endif %}">
+                <i class="fas fa-user-circle me-2"></i>My Profile
+            </a>
+            <a href="{% url 'food_donation:notifications' %}" class="list-group-item list-group-item-action {% if active == 'notifications' %}active{% endif %}">
+                <i class="fas fa-bell me-2"></i>Notifications
+                {% if unread_notifications > 0 %}
+                <span class="badge rounded-pill bg-danger float-end">{{ unread_notifications }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'food_donation:view_messages' %}" class="list-group-item list-group-item-action {% if active == 'messages' %}active{% endif %}">
+                <i class="fas fa-envelope me-2"></i>Messages
+                {% if unread_messages > 0 %}
+                <span class="badge rounded-pill bg-danger float-end">{{ unread_messages }}</span>
+                {% endif %}
+            </a>
+            {% if user.is_authenticated and user.userprofile.is_donor %}
+            <a href="{% url 'food_donation:donate' %}" class="list-group-item list-group-item-action">
+                <i class="fas fa-utensils me-2"></i>Donate Food
+            </a>
+            <a href="{% url 'food_donation:money_donate' %}" class="list-group-item list-group-item-action">
+                <i class="fas fa-donate me-2"></i>Donate Money
+            </a>
+            <a href="{% url 'food_donation:money_donation_history' %}" class="list-group-item list-group-item-action {% if active == 'money_donations' %}active{% endif %}">
+                <i class="fas fa-history me-2"></i>Donation History
+            </a>
+            {% endif %}
+            
+            {% if user.is_authenticated and user.userprofile.is_volunteer %}
+            <a href="#" class="list-group-item list-group-item-action">
+                <i class="fas fa-truck me-2"></i>My Deliveries
+            </a>
+            {% endif %}
+            
+            <a href="{% url 'food_donation:marketplace' %}" class="list-group-item list-group-item-action">
+                <i class="fas fa-store me-2"></i>Marketplace
+            </a>
+            <a href="{% url 'food_donation:my_marketplace_items' %}" class="list-group-item list-group-item-action {% if active == 'my_listings' %}active{% endif %}">
+                <i class="fas fa-tag me-2"></i>My Marketplace Listings
+            </a>
+            <a href="{% url 'food_donation:chatbot' %}" class="list-group-item list-group-item-action">
+                <i class="fas fa-robot me-2"></i>Chatbot Help
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="fas fa-cog me-2"></i>Account Settings</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+            <a href="{% url 'food_donation:profile' %}" class="list-group-item list-group-item-action">
+                <i class="fas fa-user-edit me-2"></i>Edit Profile
+            </a>
+            <a href="#" class="list-group-item list-group-item-action">
+                <i class="fas fa-lock me-2"></i>Change Password
+            </a>
+            <a href="{% url 'food_donation:logout' %}" class="list-group-item list-group-item-action text-danger">
+                <i class="fas fa-sign-out-alt me-2"></i>Logout
+            </a>
+        </div>
+    </div>
+</div> 

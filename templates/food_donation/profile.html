@@ -1,0 +1,545 @@
+{% extends 'food_donation/base.html' %}
+
+{% block title %}Profile - Beyond Hunger{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0"><i class="fas fa-user-circle me-2"></i>My Profile</h2>
+            </div>
+            <div class="card-body">
+                <div class="row mb-5">
+                    <div class="col-md-4 text-center">
+                        <div class="rounded-circle bg-light mx-auto mb-3 d-flex align-items-center justify-content-center hover-scale position-relative" style="width: 150px; height: 150px; overflow: hidden;">
+                            {% if user_profile.get_profile_photo_url %}
+                                <img src="{{ user_profile.get_profile_photo_url }}" alt="{{ user_profile.user.username }}'s Profile Picture" class="w-100 h-100" style="object-fit: cover;">
+                            {% else %}
+                                <i class="fas fa-user fa-5x text-primary"></i>
+                            {% endif %}
+                            <a href="#" class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-2" data-bs-toggle="modal" data-bs-target="#photoModal" title="Change photo">
+                                <i class="fas fa-camera"></i>
+                            </a>
+                        </div>
+                        <h3>{{ user_profile.user.username }}</h3>
+                        <p class="text-muted">Member since {{ user_profile.user.date_joined|date:"M d, Y" }}</p>
+                        
+                        <div class="d-flex justify-content-center mt-3">
+                            {% if user_profile.is_donor %}
+                            <span class="badge bg-primary me-2 hover-effect">Donor</span>
+                            {% endif %}
+                            
+                            {% if user_profile.is_volunteer %}
+                            <span class="badge bg-success hover-effect">Volunteer</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-8">
+                        <h4 class="mb-3">Account Information</h4>
+                        <div class="card mb-4 hover-lift">
+                            <div class="card-body">
+                                <div class="row mb-2 hover-highlight">
+                                    <div class="col-md-4">
+                                        <strong><i class="fas fa-envelope me-2 text-primary"></i>Email:</strong>
+                                    </div>
+                                    <div class="col-md-8">
+                                        {{ user_profile.user.email }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-2 hover-highlight">
+                                    <div class="col-md-4">
+                                        <strong><i class="fas fa-phone me-2 text-primary"></i>Phone:</strong>
+                                    </div>
+                                    <div class="col-md-8">
+                                        {{ user_profile.phone }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row hover-highlight">
+                                    <div class="col-md-4">
+                                        <strong><i class="fas fa-map-marker-alt me-2 text-primary"></i>Address:</strong>
+                                    </div>
+                                    <div class="col-md-8">
+                                        {{ user_profile.address }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if user_profile.is_volunteer and volunteer %}
+                        <h4 class="mb-3">Volunteer Information</h4>
+                        <div class="card hover-lift">
+                            <div class="card-body">
+                                <div class="row mb-2 hover-highlight">
+                                    <div class="col-md-4">
+                                        <strong><i class="fas fa-car me-2 text-primary"></i>Vehicle Type:</strong>
+                                    </div>
+                                    <div class="col-md-8">
+                                        {{ volunteer.vehicle_type|default:"Not specified" }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-2 hover-highlight">
+                                    <div class="col-md-4">
+                                        <strong><i class="fas fa-map me-2 text-primary"></i>Service Area:</strong>
+                                    </div>
+                                    <div class="col-md-8">
+                                        {{ volunteer.service_area }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row hover-highlight">
+                                    <div class="col-md-4">
+                                        <strong><i class="fas fa-toggle-on me-2 text-primary"></i>Availability:</strong>
+                                    </div>
+                                    <div class="col-md-8">
+                                        {% if volunteer.availability %}
+                                        <span class="badge bg-success hover-effect">Available</span>
+                                        {% else %}
+                                        <span class="badge bg-warning hover-effect">Not Available</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- My Donations Section -->
+                {% if user_profile.is_donor and food_donations %}
+                <h3 class="mb-4"><i class="fas fa-hand-holding-heart me-2 text-primary"></i>My Donations</h3>
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Your Food Donations</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Food Type</th>
+                                        <th>Quantity</th>
+                                        <th>Pickup Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for donation in food_donations %}
+                                    <tr>
+                                        <td>{{ donation.food_type }}</td>
+                                        <td>{{ donation.quantity }}</td>
+                                        <td>{{ donation.pickup_date }}</td>
+                                        <td>
+                                            <span class="badge {% if donation.status == 'pending' %}bg-warning{% elif donation.status == 'accepted' %}bg-info{% elif donation.status == 'in_transit' %}bg-primary{% elif donation.status == 'delivered' %}bg-success{% else %}bg-danger{% endif %}">
+                                                {{ donation.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'food_donation:download_donation_receipt' donation.id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-file-download"></i> Receipt
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% elif user_profile.is_donor %}
+                <div class="card mb-5 hover-lift">
+                    <div class="card-body text-center py-5">
+                        <h4>You haven't made any food donations yet.</h4>
+                        <p class="text-muted">Start helping people by donating your extra food!</p>
+                        <a href="{% url 'food_donation:donate' %}" class="btn btn-primary mt-2">Donate Food</a>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Add this section after food donations section -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-donate me-2"></i>Money Donations</h5>
+                        <a href="{% url 'food_donation:money_donation_history' %}" class="btn btn-light btn-sm">
+                            <i class="fas fa-external-link-alt me-1"></i>View All
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        {% if money_donations %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>You can view your complete donation history and transaction details on the <a href="{% url 'food_donation:money_donation_history' %}" class="alert-link">donation history page</a>.
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Amount</th>
+                                            <th>Payment Method</th>
+                                            <th>Transaction ID</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for donation in money_donations %}
+                                        <tr>
+                                            <td>{{ donation.created_at|date:"M d, Y" }}</td>
+                                            <td>${{ donation.amount }}</td>
+                                            <td>
+                                                {% if donation.payment_method == 'upi' %}
+                                                    UPI
+                                                {% elif donation.payment_method == 'bank_transfer' %}
+                                                    Bank Transfer
+                                                {% elif donation.payment_method == 'cash' %}
+                                                    Cash
+                                                {% else %}
+                                                    {{ donation.payment_method|default:"Other" }}
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ donation.transaction_id|default:"-" }}</td>
+                                            <td>
+                                                {% if donation.is_acknowledged %}
+                                                <span class="badge bg-success">Acknowledged</span>
+                                                {% else %}
+                                                <span class="badge bg-warning">Pending</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p>You haven't made any money donations yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Add Money Donation Confirmation Form -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5>I've Made a Donation</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="donation-response-message"></div>
+                        <p>If you've completed your donation, let us know so we can acknowledge your contribution.</p>
+                        <form id="money-donation-form">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="amount" class="form-label">Amount Donated ($)</label>
+                                <input type="number" class="form-control" id="amount" name="amount" min="1" step="0.01" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="transaction_id" class="form-label">Transaction ID (if available)</label>
+                                <input type="text" class="form-control" id="transaction_id" name="transaction_id" placeholder="e.g., UPI reference, bank transfer ID">
+                            </div>
+                            <div class="mb-3">
+                                <label for="payment_method" class="form-label">Payment Method</label>
+                                <select class="form-select" id="payment_method" name="payment_method">
+                                    <option value="upi">UPI</option>
+                                    <option value="bank_transfer">Bank Transfer</option>
+                                    <option value="cash">Cash</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary" id="submit-donation-btn">Confirm Donation</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Volunteer Assignments Section -->
+                {% if user_profile.is_volunteer and assignments %}
+                <h3 class="mb-4"><i class="fas fa-truck me-2 text-primary"></i>My Delivery Assignments</h3>
+                <div class="table-responsive">
+                    <table class="table table-hover table-animated">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Food Type</th>
+                                <th>Pickup Address</th>
+                                <th>Pickup Time</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for assignment in assignments %}
+                            <tr class="table-row-hover">
+                                <td>{{ assignment.donation.food_type }}</td>
+                                <td>{{ assignment.donation.pickup_address }}</td>
+                                <td>{{ assignment.pickup_time|date:"M d, Y H:i" }}</td>
+                                <td>
+                                    <span class="badge {% if assignment.status == 'delivered' %}bg-success{% elif assignment.status == 'assigned' %}bg-warning{% else %}bg-primary{% endif %} hover-effect">
+                                        {{ assignment.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if assignment.status == 'assigned' %}
+                                    <a href="#" class="btn btn-sm btn-outline-primary hover-grow">
+                                        <i class="fas fa-check me-1"></i>Mark as Picked Up
+                                    </a>
+                                    {% elif assignment.status == 'picked_up' %}
+                                    <a href="#" class="btn btn-sm btn-outline-success hover-grow">
+                                        <i class="fas fa-check-double me-1"></i>Mark as Delivered
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+                
+                <div class="d-flex justify-content-center mt-5">
+                    <a href="#" class="btn btn-outline-primary me-3 hover-grow">
+                        <i class="fas fa-edit me-2"></i>Edit Profile
+                    </a>
+                    <a href="{% url 'food_donation:logout' %}" class="btn btn-outline-danger hover-grow">
+                        <i class="fas fa-sign-out-alt me-2"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Profile Photo Modal -->
+<div class="modal fade" id="photoModal" tabindex="-1" aria-labelledby="photoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="photoModalLabel">Update Profile Photo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{% url 'food_donation:update_profile_photo' %}" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <!-- Profile photo guidelines -->
+                    <div class="alert alert-info mb-3">
+                        <h6 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Profile Photo Requirements</h6>
+                        <ul class="mb-0 small">
+                            <li>Your photo must clearly show your face</li>
+                            <li>Portrait-style photos only (no group photos)</li>
+                            <li>No inappropriate or non-personal images</li>
+                            <li>File must be JPG or PNG format</li>
+                            <li>Maximum file size: 5MB</li>
+                            <li>Minimum dimensions: 200x200 pixels</li>
+                        </ul>
+                        <p class="mt-2 mb-0 small">Your profile photo will be used for identification purposes within our community.</p>
+                    </div>
+                    
+                    <!-- Option to use Google photo if available -->
+                    {% if user.socialaccount_set.exists %}
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="use_google_photo" name="use_google_photo" {% if not user_profile.profile_photo %}checked{% endif %}>
+                            <label class="form-check-label" for="use_google_photo">
+                                Use my Google profile picture
+                            </label>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Custom photo upload -->
+                    <div id="upload-section" {% if user.socialaccount_set.exists and not user_profile.profile_photo %}style="display: none;"{% endif %}>
+                        <div class="mb-3">
+                            <label for="profile_photo" class="form-label">Upload new photo</label>
+                            <input type="file" class="form-control" id="profile_photo" name="profile_photo" accept="image/jpeg,image/png">
+                            <div class="form-text">Please upload a clear photo of your face for identification purposes.</div>
+                        </div>
+                        
+                        <!-- Preview -->
+                        <div class="text-center mb-3">
+                            <div id="preview-container" style="width: 150px; height: 150px; margin: 0 auto; display: none;" class="rounded-circle overflow-hidden">
+                                <img id="image-preview" src="#" alt="Preview" class="w-100 h-100" style="object-fit: cover;">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle profile photo preview
+        const photoInput = document.getElementById('profile_photo');
+        const preview = document.getElementById('image-preview');
+        const previewContainer = document.getElementById('preview-container');
+        
+        if (photoInput) {
+            photoInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        preview.src = e.target.result;
+                        previewContainer.style.display = 'block';
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+        
+        // Toggle upload section based on Google photo checkbox
+        const googleCheckbox = document.getElementById('use_google_photo');
+        const uploadSection = document.getElementById('upload-section');
+        
+        if (googleCheckbox && uploadSection) {
+            googleCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    uploadSection.style.display = 'none';
+                } else {
+                    uploadSection.style.display = 'block';
+                }
+            });
+        }
+    });
+    
+    // Handle money donation form submission with AJAX
+    document.addEventListener('DOMContentLoaded', function() {
+        const donationForm = document.getElementById('money-donation-form');
+        const responseMessage = document.getElementById('donation-response-message');
+        
+        if (donationForm) {
+            donationForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const submitBtn = document.getElementById('submit-donation-btn');
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+                submitBtn.disabled = true;
+                
+                const formData = new FormData(donationForm);
+                
+                fetch('{% url "food_donation:confirm_money_donation" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    responseMessage.innerHTML = '';
+                    
+                    if (data.status === 'success') {
+                        // Show success message
+                        responseMessage.innerHTML = `
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="fas fa-check-circle me-2"></i>${data.message}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        `;
+                        // Reset form
+                        donationForm.reset();
+                        
+                        // Reload the money donations section after a short delay
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 3000);
+                    } else {
+                        // Show error message
+                        responseMessage.innerHTML = `
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="fas fa-exclamation-circle me-2"></i>${data.message}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    responseMessage.innerHTML = `
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i>An error occurred while processing your donation. Please try again.
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    `;
+                    console.error('Error:', error);
+                })
+                .finally(() => {
+                    submitBtn.innerHTML = 'Confirm Donation';
+                    submitBtn.disabled = false;
+                });
+            });
+        }
+    });
+</script>
+
+<style>
+    .hover-highlight:hover {
+        background-color: var(--secondary-color);
+        border-radius: 5px;
+        padding: 3px;
+        transition: all 0.3s ease;
+    }
+    
+    .hover-scale {
+        transition: all 0.3s ease;
+    }
+    
+    .hover-scale:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    
+    .hover-effect {
+        transition: all 0.3s ease;
+    }
+    
+    .hover-effect:hover {
+        transform: scale(1.1);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    
+    .hover-lift {
+        transition: all 0.3s ease;
+    }
+    
+    .hover-lift:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    }
+    
+    .hover-grow {
+        transition: all 0.3s ease;
+    }
+    
+    .hover-grow:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .table-animated tr {
+        transition: all 0.3s ease;
+    }
+    
+    .table-animated tr:hover {
+        background-color: var(--secondary-color);
+        transform: translateX(5px);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .table-row-hover {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .table-row-hover:hover {
+        background-color: var(--secondary-color);
+        transform: translateX(5px) translateY(-2px);
+        box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %} 

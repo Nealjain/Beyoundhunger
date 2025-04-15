@@ -1,0 +1,242 @@
+{% extends 'food_donation/base.html' %}
+
+{% block title %}AI Chatbot - Beyond Hunger{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Beyond Hunger AI Assistant</h3>
+                </div>
+                <div class="card-body">
+                    <div id="chat-messages" class="mb-4" style="height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 15px; border-radius: 5px;">
+                        <div class="message system-message">
+                            <p>Welcome to Beyond Hunger AI Assistant! How can I help you today?</p>
+                        </div>
+                    </div>
+                    
+                    <form id="chat-form">
+                        <div class="input-group">
+                            <input type="text" id="user-input" class="form-control" placeholder="Type your message here..." required>
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" type="submit" id="send-button">
+                                    <i class="fas fa-paper-plane"></i> Send
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer bg-light">
+                    <small class="text-muted">This AI assistant can help answer questions about food donations, the marketplace, and how to get involved.</small>
+                </div>
+            </div>
+            
+            <!-- Suggested Questions -->
+            <div class="card mt-4 shadow">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Suggested Questions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <button class="btn btn-outline-primary btn-sm w-100 mb-2 suggested-question">How do I donate food?</button>
+                            <button class="btn btn-outline-primary btn-sm w-100 mb-2 suggested-question">How can I volunteer?</button>
+                            <button class="btn btn-outline-primary btn-sm w-100 mb-2 suggested-question">What is the marketplace?</button>
+                        </div>
+                        <div class="col-md-6">
+                            <button class="btn btn-outline-primary btn-sm w-100 mb-2 suggested-question">How can I donate money?</button>
+                            <button class="btn btn-outline-primary btn-sm w-100 mb-2 suggested-question">How do I register?</button>
+                            <button class="btn btn-outline-primary btn-sm w-100 suggested-question">Contact information</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.message {
+    margin-bottom: 15px;
+    padding: 10px 15px;
+    border-radius: 15px;
+    max-width: 80%;
+}
+
+.user-message {
+    background-color: #dcf8c6;
+    margin-left: auto;
+    border-bottom-right-radius: 5px;
+}
+
+.bot-message {
+    background-color: #f1f0f0;
+    margin-right: auto;
+    border-bottom-left-radius: 5px;
+}
+
+.system-message {
+    background-color: #e3f2fd;
+    margin: 10px auto;
+    text-align: center;
+    border-radius: 10px;
+}
+
+.typing-indicator p {
+    display: flex;
+    align-items: center;
+}
+
+.typing-indicator p::after {
+    content: "•••";
+    animation: typing 1s infinite;
+    margin-left: 5px;
+}
+
+@keyframes typing {
+    0% { opacity: 0.3; }
+    50% { opacity: 1; }
+    100% { opacity: 0.3; }
+}
+
+.suggested-question {
+    transition: all 0.3s ease;
+}
+
+.suggested-question:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatForm = document.getElementById('chat-form');
+    const userInput = document.getElementById('user-input');
+    const chatMessages = document.getElementById('chat-messages');
+    const sendButton = document.getElementById('send-button');
+    const suggestedQuestions = document.querySelectorAll('.suggested-question');
+    
+    // Set up click listeners for suggested questions
+    suggestedQuestions.forEach(button => {
+        button.addEventListener('click', function() {
+            const question = this.textContent;
+            userInput.value = question;
+            
+            // Trigger form submission
+            const event = new Event('submit');
+            chatForm.dispatchEvent(event);
+        });
+    });
+
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const userMessage = userInput.value.trim();
+        if (!userMessage) return;
+        
+        // Disable form while processing
+        disableForm(true);
+        
+        // Add user message to chat
+        addMessage(userMessage, 'user-message');
+        
+        // Clear input
+        userInput.value = '';
+        
+        // Send to backend and get response
+        fetchBotResponse(userMessage);
+    });
+    
+    function disableForm(disabled) {
+        userInput.disabled = disabled;
+        sendButton.disabled = disabled;
+        if (disabled) {
+            sendButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        } else {
+            sendButton.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+        }
+    }
+    
+    function addMessage(message, className) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', className);
+        
+        const messagePara = document.createElement('p');
+        messagePara.textContent = message;
+        
+        messageDiv.appendChild(messagePara);
+        chatMessages.appendChild(messageDiv);
+        
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    function fetchBotResponse(userMessage) {
+        // Show typing indicator
+        const typingDiv = document.createElement('div');
+        typingDiv.classList.add('message', 'bot-message', 'typing-indicator');
+        typingDiv.innerHTML = '<p>Typing</p>';
+        chatMessages.appendChild(typingDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // Make AJAX request to backend
+        fetch('{% url "food_donation:api_chatbot" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                message: userMessage
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Remove typing indicator
+            chatMessages.removeChild(typingDiv);
+            
+            // Add bot response
+            addMessage(data.response, 'bot-message');
+            
+            // Re-enable form
+            disableForm(false);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Remove typing indicator
+            chatMessages.removeChild(typingDiv);
+            
+            // Show error message
+            addMessage('Sorry, I encountered an error. Please try again.', 'bot-message');
+            
+            // Re-enable form
+            disableForm(false);
+        });
+    }
+    
+    // Function to get CSRF token from cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %} 

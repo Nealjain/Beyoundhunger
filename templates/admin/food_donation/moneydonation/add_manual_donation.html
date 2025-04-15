@@ -1,0 +1,338 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static admin_urls %}
+
+{% block extrahead %}
+{{ block.super }}
+<!-- Include jQuery for email lookup -->
+<script src="{% static 'admin/js/vendor/jquery/jquery.min.js' %}"></script>
+<!-- Include admin forms CSS -->
+<link rel="stylesheet" type="text/css" href="{% static 'css/admin_forms.css' %}">
+<style>
+    /* Ensure text is selectable everywhere */
+    body, input, textarea, select, p, div, span, label {
+        user-select: auto !important;
+        -webkit-user-select: auto !important;
+        -moz-user-select: auto !important;
+    }
+    
+    /* Password visibility toggle */
+    .password-field-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+    
+    .password-toggle {
+        position: absolute;
+        right: 10px;
+        cursor: pointer;
+        user-select: none;
+        -webkit-user-select: none;
+        color: #666;
+        font-size: 14px;
+    }
+    
+    /* Dashboard Stats Styling */
+    .stats-container {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+    }
+    
+    .stat-box {
+        width: 32%;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        color: white;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        position: relative;
+        overflow: hidden;
+        user-select: none !important;
+    }
+    
+    .stat-box::before {
+        content: "";
+        position: absolute;
+        top: -10px;
+        left: -10px;
+        right: -10px;
+        bottom: -10px;
+        background: inherit;
+        filter: blur(10px);
+        opacity: 0.3;
+        z-index: -1;
+    }
+    
+    .stat-box.donations {
+        background: linear-gradient(135deg, #ff7e5f, #feb47b);
+    }
+    
+    .stat-box.volunteers {
+        background: linear-gradient(135deg, #42a5f5, #0d47a1);
+    }
+    
+    .stat-box.lives {
+        background: linear-gradient(135deg, #66bb6a, #1b5e20);
+    }
+    
+    .stat-number {
+        font-size: 42px;
+        font-weight: bold;
+        margin: 10px 0;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+    }
+    
+    .stat-label {
+        font-size: 16px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        opacity: 0.9;
+    }
+    
+    .stat-icon {
+        font-size: 24px;
+        margin-bottom: 5px;
+    }
+    
+    /* Prevent text selection across the dashboard */
+    .no-select {
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+    }
+</style>
+<script>
+    django.jQuery(document).ready(function() {
+        var emailField = django.jQuery('#id_email');
+        var userInfoDiv = django.jQuery('#user-info');
+        var userIdField = django.jQuery('#id_user_id');
+        var newUserFields = django.jQuery('#new-user-fields');
+        
+        emailField.on('blur', function() {
+            var email = django.jQuery(this).val();
+            if (email && validateEmail(email)) {
+                // Show loading indicator
+                userInfoDiv.html('<p>Checking email...</p>');
+                
+                // Make AJAX call to check if email exists
+                django.jQuery.ajax({
+                    url: '{% url "admin:check_user_exists" %}',
+                    data: { 'email': email },
+                    dataType: 'json',
+                    success: function(data) {
+                        if (data.exists) {
+                            // User exists, show info and hide new user fields
+                            userInfoDiv.html('<div class="success-message">✓ User found: ' + data.username + '</div>');
+                            userIdField.val(data.user_id);
+                            newUserFields.hide();
+                        } else {
+                            // User doesn't exist, show fields to create new user
+                            userInfoDiv.html('<div class="error-message">User not found. A new user will be created.</div>');
+                            userIdField.val('');
+                            newUserFields.show();
+                        }
+                    },
+                    error: function() {
+                        userInfoDiv.html('<div class="error-message">Error checking email. Please try again.</div>');
+                    }
+                });
+            } else if (email) {
+                userInfoDiv.html('<div class="error-message">Please enter a valid email address.</div>');
+            } else {
+                userInfoDiv.html('');
+            }
+        });
+        
+        // Add password visibility toggle for any password fields
+        $('input[type="password"]').each(function() {
+            var $input = $(this);
+            var $container = $('<div class="password-field-container"></div>');
+            var $toggle = $('<span class="password-toggle">Show</span>');
+            
+            // Wrap input in container and add toggle button
+            $input.wrap($container);
+            $input.after($toggle);
+            
+            // Toggle password visibility
+            $toggle.on('click', function() {
+                if ($input.attr('type') === 'password') {
+                    $input.attr('type', 'text');
+                    $toggle.text('Hide');
+                } else {
+                    $input.attr('type', 'password');
+                    $toggle.text('Show');
+                }
+            });
+        });
+        
+        // Prevent text selection on stats
+        $('.stat-box').on('selectstart', function(e) {
+            e.preventDefault();
+            return false;
+        });
+        
+        function validateEmail(email) {
+            var re = /\S+@\S+\.\S+/;
+            return re.test(email);
+        }
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <!-- Stats Dashboard -->
+    <div class="stats-container no-select">
+        <div class="stat-box donations">
+            <div class="stat-icon"><i class="fas fa-hand-holding-heart"></i></div>
+            <div class="stat-number">{{ money_donations_count|default:"0" }}</div>
+            <div class="stat-label">Total Donations</div>
+        </div>
+        <div class="stat-box volunteers">
+            <div class="stat-icon"><i class="fas fa-user-friends"></i></div>
+            <div class="stat-number">{{ active_volunteers|default:"0" }}</div>
+            <div class="stat-label">Active Volunteers</div>
+        </div>
+        <div class="stat-box lives">
+            <div class="stat-icon"><i class="fas fa-users"></i></div>
+            <div class="stat-number">{{ lives_impacted|default:"0" }}</div>
+            <div class="stat-label">Lives Impacted</div>
+        </div>
+    </div>
+
+    <div class="module">
+        <h1>{{ title }}</h1>
+        <p class="help-text">Add a manual donation for an existing user by their email address.</p>
+        
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" id="id_user_id" name="user_id" value="">
+            
+            <fieldset class="module aligned">
+                <div class="form-row">
+                    <div class="field-box">
+                        <label for="id_email">Donor Email*:</label>
+                        <input type="email" id="id_email" name="email" required class="vTextField">
+                        <div id="user-info"></div>
+                        <p class="help">Enter the donor's email address to find existing users or create a new one.</p>
+                    </div>
+                </div>
+                
+                <!-- New user fields section (hidden by default) -->
+                <div id="new-user-fields" style="display:none;">
+                    <h3>New User Information</h3>
+                    <div class="form-row">
+                        <div class="field-box">
+                            <label for="id_first_name">First Name*:</label>
+                            <input type="text" id="id_first_name" name="first_name" class="vTextField">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="field-box">
+                            <label for="id_last_name">Last Name*:</label>
+                            <input type="text" id="id_last_name" name="last_name" class="vTextField">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="field-box">
+                            <label for="id_phone">Phone Number:</label>
+                            <input type="tel" id="id_phone" name="phone" class="vTextField">
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+            
+            <fieldset class="module aligned">
+                <h2>Donation Details</h2>
+                <div class="form-row">
+                    <div class="field-box">
+                        <label for="id_amount">Amount*:</label>
+                        <input type="number" id="id_amount" name="amount" step="0.01" min="0.01" required class="vTextField">
+                        <p class="help">Enter the donation amount.</p>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="field-box">
+                        <label for="id_payment_method">Payment Method:</label>
+                        <select id="id_payment_method" name="payment_method" class="vTextField">
+                            {% for value, label in payment_methods %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <p class="help">Select the payment method used for this donation.</p>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="field-box">
+                        <label for="id_transaction_id">Transaction ID (optional):</label>
+                        <input type="text" id="id_transaction_id" name="transaction_id" class="vTextField" placeholder="Enter transaction ID">
+                        <p class="help">Optional: Enter a transaction ID for reference. If left blank, a unique ID will be generated.</p>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="field-box">
+                        <label for="id_notes">Notes:</label>
+                        <textarea id="id_notes" name="notes" class="vLargeTextField" rows="3" placeholder="Add any additional notes about this donation"></textarea>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="field-box">
+                        <label for="id_pan_number">PAN Number for Tax Benefits (Optional):</label>
+                        <input type="text" id="id_pan_number" name="pan_number" class="vTextField" placeholder="Enter PAN number for tax certificate">
+                        <p class="help">Required for tax deduction certificates under Section 80G.</p>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="field-box">
+                        <div class="checkbox-row">
+                            <input type="checkbox" id="id_needs_tax_certificate" name="needs_tax_certificate">
+                            <label for="id_needs_tax_certificate" style="display: inline; margin-left: 5px;">
+                                Mark for tax certificate generation
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="field-box">
+                        <div class="checkbox-row">
+                            <input type="checkbox" id="id_is_approved" name="is_approved" checked>
+                            <label for="id_is_approved" style="display: inline; margin-left: 5px;">
+                                Mark as approved
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="field-box">
+                        <label for="id_send_email">
+                            <input type="checkbox" id="id_send_email" name="send_email" checked>
+                            Send thank you email
+                        </label>
+                        <p class="help">Check this box to send an automatic thank you email to the donor.</p>
+                    </div>
+                </div>
+            </fieldset>
+            
+            <div class="submit-row">
+                <input type="submit" value="Add Donation" class="default" name="_save">
+                <a href="{% url 'admin:food_donation_moneydonation_changelist' %}" class="closelink">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 
