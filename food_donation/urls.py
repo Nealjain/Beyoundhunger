@@ -1,7 +1,10 @@
-from django.urls import path
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 from . import views
 from . import api
 from . import views_debug
+from . import bhandara_views  # Import the new bhandara_views module
 
 app_name = 'food_donation'
 
@@ -95,7 +98,7 @@ urlpatterns = [
 
     # Bhandara URLs
     path('bhandara/', views.bhandara_list, name='bhandara'),
-    path('bhandara/<int:pk>/', views.bhandara_detail, name='bhandara_detail'),
+    path('bhandara/<int:pk>/', bhandara_views.bhandara_detail, name='bhandara_detail'),
     path('bhandara/create/', views.create_bhandara, name='create_bhandara'),
     path('bhandara/manage/', views.manage_bhandaras, name='manage_bhandaras'),
     path('bhandara/<int:event_id>/volunteer/', views.volunteer_signup, name='volunteer_signup'),
