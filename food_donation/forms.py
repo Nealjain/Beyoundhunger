@@ -77,7 +77,7 @@ class ContactForm(forms.Form):
 class MarketplaceItemForm(forms.ModelForm):
     class Meta:
         model = MarketplaceItem
-        fields = ['title', 'description', 'price', 'condition', 'location', 'category', 'allow_bidding']
+        fields = ['title', 'description', 'price', 'location', 'category', 'allow_bidding']
     
     def clean_title(self):
         title = self.cleaned_data.get('title')
