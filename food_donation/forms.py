@@ -11,7 +11,6 @@ class BhandaraForm(forms.ModelForm):
             'name', 'description', 'start_datetime', 'end_datetime', 
             'address', 'city', 'state', 'postal_code', 'contact_phone', 
             'organizer_name', 'organizer_email', 'expected_attendees',
-            'food_types', 'is_vegetarian', 'is_vegan'
         ]
         widgets = {
             'start_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
