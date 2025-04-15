@@ -1,6 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import Bhandara, UserProfile, FoodDonation, VolunteerAssignment, MarketplaceItem, MarketplaceLister, MoneyDonation
+from .models import Bhandara, UserProfile, FoodDonation, MarketplaceItem, MarketplaceLister, MoneyDonation
 from .content_moderation import contains_inappropriate_content
 
 class BhandaraForm(forms.ModelForm):
