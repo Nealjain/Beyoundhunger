@@ -45,10 +45,9 @@ class BhandaraForm(forms.ModelForm):
 class FoodDonationForm(forms.ModelForm):
     class Meta:
         model = FoodDonation
-        fields = ['food_type', 'quantity', 'pickup_date', 'pickup_time', 'pickup_address', 'notes']
+        fields = ['food_type', 'quantity', 'pickup_date', 'pickup_address', 'notes']
         widgets = {
             'pickup_date': forms.DateInput(attrs={'type': 'date'}),
-            'pickup_time': forms.TimeInput(attrs={'type': 'time'}),
         }
     
     def clean_notes(self):
